@@ -1,0 +1,376 @@
+/* Retro 16-bit styling for Harvest Hope */
+
+/* Pixel-perfect font loading */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* Retro color palette */
+:root {
+  --retro-green: #00ff00;
+  --retro-amber: #ffb000;
+  --retro-cyan: #00ffff;
+  --retro-magenta: #ff00ff;
+  --retro-red: #ff0000;
+  --retro-blue: #0000ff;
+  --retro-white: #ffffff;
+  --retro-black: #000000;
+  --retro-gray: #808080;
+  --retro-dark-gray: #404040;
+  
+  /* CRT colors */
+  --crt-green: #33ff33;
+  --crt-amber: #ffaa00;
+  --crt-scan-line: rgba(0, 255, 0, 0.1);
+}
+
+/* Retro pixel font */
+.retro-font {
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 0.5px;
+}
+
+.retro-font-large {
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  font-size: 18px;
+  line-height: 1.4;
+  letter-spacing: 1px;
+}
+
+/* CRT monitor effect */
+.crt-monitor {
+  background: var(--retro-black);
+  border: 8px solid var(--retro-dark-gray);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.crt-monitor::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    transparent 50%, 
+    var(--crt-scan-line) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.crt-monitor::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    transparent 70%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Retro button styles */
+.retro-button {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  background: var(--retro-gray);
+  border: 2px solid var(--retro-white);
+  border-top-color: var(--retro-white);
+  border-left-color: var(--retro-white);
+  border-right-color: var(--retro-dark-gray);
+  border-bottom-color: var(--retro-dark-gray);
+  color: var(--retro-black);
+  padding: 8px 12px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: none;
+  image-rendering: pixelated;
+}
+
+.retro-button:hover {
+  background: var(--retro-white);
+}
+
+.retro-button:active {
+  border-top-color: var(--retro-dark-gray);
+  border-left-color: var(--retro-dark-gray);
+  border-right-color: var(--retro-white);
+  border-bottom-color: var(--retro-white);
+  transform: translate(1px, 1px);
+}
+
+.retro-button-green {
+  background: var(--retro-green);
+  color: var(--retro-black);
+}
+
+.retro-button-amber {
+  background: var(--retro-amber);
+  color: var(--retro-black);
+}
+
+.retro-button-red {
+  background: var(--retro-red);
+  color: var(--retro-white);
+}
+
+/* Retro panel styles */
+.retro-panel {
+  background: var(--retro-gray);
+  border: 2px solid var(--retro-white);
+  border-top-color: var(--retro-white);
+  border-left-color: var(--retro-white);
+  border-right-color: var(--retro-dark-gray);
+  border-bottom-color: var(--retro-dark-gray);
+  padding: 12px;
+}
+
+.retro-panel-inset {
+  background: var(--retro-dark-gray);
+  border: 2px solid var(--retro-dark-gray);
+  border-top-color: var(--retro-dark-gray);
+  border-left-color: var(--retro-dark-gray);
+  border-right-color: var(--retro-white);
+  border-bottom-color: var(--retro-white);
+  padding: 8px;
+}
+
+/* Retro text styles */
+.retro-text-green {
+  color: var(--retro-green);
+  text-shadow: 0 0 5px var(--retro-green);
+}
+
+.retro-text-amber {
+  color: var(--retro-amber);
+  text-shadow: 0 0 5px var(--retro-amber);
+}
+
+.retro-text-cyan {
+  color: var(--retro-cyan);
+  text-shadow: 0 0 5px var(--retro-cyan);
+}
+
+.retro-text-red {
+  color: var(--retro-red);
+  text-shadow: 0 0 5px var(--retro-red);
+}
+
+/* Retro input styles */
+.retro-input {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  background: var(--retro-black);
+  border: 2px solid var(--retro-dark-gray);
+  border-top-color: var(--retro-dark-gray);
+  border-left-color: var(--retro-dark-gray);
+  border-right-color: var(--retro-white);
+  border-bottom-color: var(--retro-white);
+  color: var(--retro-green);
+  padding: 4px 8px;
+  outline: none;
+}
+
+.retro-input:focus {
+  color: var(--retro-amber);
+  text-shadow: 0 0 5px var(--retro-amber);
+}
+
+/* Retro slider styles */
+.retro-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  background: var(--retro-dark-gray);
+  border: 1px solid var(--retro-black);
+  outline: none;
+}
+
+.retro-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--retro-white);
+  border: 2px solid var(--retro-black);
+  cursor: pointer;
+}
+
+.retro-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--retro-white);
+  border: 2px solid var(--retro-black);
+  cursor: pointer;
+  border-radius: 0;
+}
+
+/* Retro progress bar */
+.retro-progress {
+  width: 100%;
+  height: 12px;
+  background: var(--retro-black);
+  border: 2px solid var(--retro-white);
+  border-top-color: var(--retro-dark-gray);
+  border-left-color: var(--retro-dark-gray);
+  border-right-color: var(--retro-white);
+  border-bottom-color: var(--retro-white);
+  overflow: hidden;
+}
+
+.retro-progress-bar {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--retro-green) 0%,
+    var(--retro-amber) 50%,
+    var(--retro-red) 100%
+  );
+  transition: width 0.3s ease;
+}
+
+/* Retro modal/dialog */
+.retro-modal {
+  background: var(--retro-gray);
+  border: 4px solid var(--retro-white);
+  border-top-color: var(--retro-white);
+  border-left-color: var(--retro-white);
+  border-right-color: var(--retro-dark-gray);
+  border-bottom-color: var(--retro-dark-gray);
+  box-shadow: 4px 4px 0px var(--retro-black);
+}
+
+.retro-modal-title {
+  background: var(--retro-blue);
+  color: var(--retro-white);
+  padding: 8px 12px;
+  margin: -12px -12px 12px -12px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+/* Retro table styles */
+.retro-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 2px;
+  background: var(--retro-dark-gray);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+}
+
+.retro-table th,
+.retro-table td {
+  background: var(--retro-gray);
+  border: 1px solid var(--retro-white);
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.retro-table th {
+  background: var(--retro-blue);
+  color: var(--retro-white);
+  text-transform: uppercase;
+}
+
+/* Retro animations */
+@keyframes retro-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.retro-blink {
+  animation: retro-blink 1s infinite;
+}
+
+@keyframes retro-glow {
+  0%, 100% { text-shadow: 0 0 5px currentColor; }
+  50% { text-shadow: 0 0 20px currentColor, 0 0 30px currentColor; }
+}
+
+.retro-glow {
+  animation: retro-glow 2s ease-in-out infinite;
+}
+
+/* Pixel art scaling */
+.pixel-art {
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Retro scrollbar */
+.retro-scrollbar::-webkit-scrollbar {
+  width: 16px;
+}
+
+.retro-scrollbar::-webkit-scrollbar-track {
+  background: var(--retro-dark-gray);
+  border: 2px solid var(--retro-black);
+}
+
+.retro-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--retro-gray);
+  border: 2px solid var(--retro-white);
+  border-top-color: var(--retro-white);
+  border-left-color: var(--retro-white);
+  border-right-color: var(--retro-dark-gray);
+  border-bottom-color: var(--retro-dark-gray);
+}
+
+.retro-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--retro-white);
+}
+
+/* Retro loading spinner */
+@keyframes retro-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.retro-spinner {
+  width: 32px;
+  height: 32px;
+  border: 4px solid var(--retro-dark-gray);
+  border-top: 4px solid var(--retro-green);
+  animation: retro-spin 1s linear infinite;
+}
+
+/* Utility classes */
+.retro-border {
+  border: 2px solid var(--retro-white);
+  border-top-color: var(--retro-white);
+  border-left-color: var(--retro-white);
+  border-right-color: var(--retro-dark-gray);
+  border-bottom-color: var(--retro-dark-gray);
+}
+
+.retro-border-inset {
+  border: 2px solid var(--retro-dark-gray);
+  border-top-color: var(--retro-dark-gray);
+  border-left-color: var(--retro-dark-gray);
+  border-right-color: var(--retro-white);
+  border-bottom-color: var(--retro-white);
+}
+
+.retro-shadow {
+  box-shadow: 2px 2px 0px var(--retro-black);
+}
+
+.retro-shadow-large {
+  box-shadow: 4px 4px 0px var(--retro-black);
+}

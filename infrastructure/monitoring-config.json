@@ -1,0 +1,221 @@
+{
+  "dashboards": {
+    "HarvestHope-Performance": {
+      "widgets": [
+        {
+          "type": "metric",
+          "properties": {
+            "metrics": [
+              ["AWS/Lambda", "Duration", "FunctionName", "harvest-hope-weather"],
+              [".", ".", ".", "harvest-hope-market"],
+              [".", ".", ".", "harvest-hope-npc"],
+              [".", ".", ".", "harvest-hope-event"],
+              [".", ".", ".", "harvest-hope-gamestate"],
+              [".", ".", ".", "harvest-hope-financial"]
+            ],
+            "period": 300,
+            "stat": "Average",
+            "region": "us-east-1",
+            "title": "Lambda Function Durations"
+          }
+        },
+        {
+          "type": "metric",
+          "properties": {
+            "metrics": [
+              ["AWS/Lambda", "Errors", "FunctionName", "harvest-hope-weather"],
+              [".", ".", ".", "harvest-hope-market"],
+              [".", ".", ".", "harvest-hope-npc"],
+              [".", ".", ".", "harvest-hope-event"],
+              [".", ".", ".", "harvest-hope-gamestate"],
+              [".", ".", ".", "harvest-hope-financial"]
+            ],
+            "period": 300,
+            "stat": "Sum",
+            "region": "us-east-1",
+            "title": "Lambda Function Errors"
+          }
+        },
+        {
+          "type": "metric",
+          "properties": {
+            "metrics": [
+              ["AWS/ApiGateway", "Count", "ApiName", "Harvest Hope Game API"],
+              [".", "Latency", ".", "."],
+              [".", "4XXError", ".", "."],
+              [".", "5XXError", ".", "."]
+            ],
+            "period": 300,
+            "stat": "Average",
+            "region": "us-east-1",
+            "title": "API Gateway Metrics"
+          }
+        },
+        {
+          "type": "metric",
+          "properties": {
+            "metrics": [
+              ["AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", "harvest-hope-game-states"],
+              [".", "ConsumedWriteCapacityUnits", ".", "."],
+              [".", "ConsumedReadCapacityUnits", ".", "harvest-hope-market-data"],
+              [".", "ConsumedWriteCapacityUnits", ".", "."]
+            ],
+            "period": 300,
+            "stat": "Sum",
+            "region": "us-east-1",
+            "title": "DynamoDB Consumed Capacity"
+          }
+        }
+      ]
+    }
+  },
+  "alarms": {
+    "WeatherServiceErrors": {
+      "MetricName": "Errors",
+      "Namespace": "AWS/Lambda",
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "harvest-hope-weather"
+        }
+      ],
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 2,
+      "Threshold": 5,
+      "ComparisonOperator": "GreaterThanThreshold",
+      "AlarmDescription": "Weather service error rate too high",
+      "TreatMissingData": "notBreaching"
+    },
+    "MarketServiceErrors": {
+      "MetricName": "Errors",
+      "Namespace": "AWS/Lambda",
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "harvest-hope-market"
+        }
+      ],
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 2,
+      "Threshold": 5,
+      "ComparisonOperator": "GreaterThanThreshold",
+      "AlarmDescription": "Market service error rate too high",
+      "TreatMissingData": "notBreaching"
+    },
+    "NPCServiceErrors": {
+      "MetricName": "Errors",
+      "Namespace": "AWS/Lambda",
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "harvest-hope-npc"
+        }
+      ],
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 2,
+      "Threshold": 3,
+      "ComparisonOperator": "GreaterThanThreshold",
+      "AlarmDescription": "NPC service error rate too high",
+      "TreatMissingData": "notBreaching"
+    },
+    "GameStateServiceErrors": {
+      "MetricName": "Errors",
+      "Namespace": "AWS/Lambda",
+      "Dimensions": [
+        {
+          "Name": "FunctionName",
+          "Value": "harvest-hope-gamestate"
+        }
+      ],
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 2,
+      "Threshold": 10,
+      "ComparisonOperator": "GreaterThanThreshold",
+      "AlarmDescription": "Game state service error rate too high",
+      "TreatMissingData": "notBreaching"
+    },
+    "APILatencyAlarm": {
+      "MetricName": "Latency",
+      "Namespace": "AWS/ApiGateway",
+      "Dimensions": [
+        {
+          "Name": "ApiName",
+          "Value": "Harvest Hope Game API"
+        }
+      ],
+      "Statistic": "Average",
+      "Period": 300,
+      "EvaluationPeriods": 3,
+      "Threshold": 5000,
+      "ComparisonOperator": "GreaterThanThreshold",
+      "AlarmDescription": "API Gateway latency too high",
+      "TreatMissingData": "notBreaching"
+    },
+    "API4xxErrors": {
+      "MetricName": "4XXError",
+      "Namespace": "AWS/ApiGateway",
+      "Dimensions": [
+        {
+          "Name": "ApiName",
+          "Value": "Harvest Hope Game API"
+        }
+      ],
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 2,
+      "Threshold": 50,
+      "ComparisonOperator": "GreaterThanThreshold",
+      "AlarmDescription": "API Gateway 4xx error rate too high",
+      "TreatMissingData": "notBreaching"
+    },
+    "API5xxErrors": {
+      "MetricName": "5XXError",
+      "Namespace": "AWS/ApiGateway",
+      "Dimensions": [
+        {
+          "Name": "ApiName",
+          "Value": "Harvest Hope Game API"
+        }
+      ],
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 2,
+      "Threshold": 10,
+      "ComparisonOperator": "GreaterThanThreshold",
+      "AlarmDescription": "API Gateway 5xx error rate too high",
+      "TreatMissingData": "notBreaching"
+    },
+    "GameStateThrottleAlarm": {
+      "MetricName": "ThrottledRequests",
+      "Namespace": "AWS/DynamoDB",
+      "Dimensions": [
+        {
+          "Name": "TableName",
+          "Value": "harvest-hope-game-states"
+        }
+      ],
+      "Statistic": "Sum",
+      "Period": 300,
+      "EvaluationPeriods": 2,
+      "Threshold": 5,
+      "ComparisonOperator": "GreaterThanThreshold",
+      "AlarmDescription": "Game states table throttling detected",
+      "TreatMissingData": "notBreaching"
+    }
+  },
+  "logGroups": {
+    "retentionDays": 30,
+    "groups": [
+      "/aws/lambda/harvest-hope-weather",
+      "/aws/lambda/harvest-hope-market",
+      "/aws/lambda/harvest-hope-npc",
+      "/aws/lambda/harvest-hope-event",
+      "/aws/lambda/harvest-hope-gamestate",
+      "/aws/lambda/harvest-hope-financial"
+    ]
+  }
+}

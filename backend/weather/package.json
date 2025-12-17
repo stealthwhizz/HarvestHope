@@ -1,0 +1,23 @@
+{
+  "name": "harvest-hope-weather-predictor",
+  "version": "1.0.0",
+  "description": "AWS Lambda function for AI-powered weather predictions using Bedrock",
+  "main": "weather-predictor.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "zip -r weather-predictor.zip . && aws lambda update-function-code --function-name harvest-hope-weather-predictor --zip-file fileb://weather-predictor.zip"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.490.0"
+  },
+  "keywords": [
+    "aws",
+    "lambda",
+    "bedrock",
+    "weather",
+    "agriculture",
+    "ai"
+  ],
+  "author": "Harvest Hope Team",
+  "license": "MIT"
+}

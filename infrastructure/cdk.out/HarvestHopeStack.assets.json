@@ -1,0 +1,21 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "f23df6e5e549e0511c6fa0f246e61480782280539f90daa52634ff962818a658": {
+      "displayName": "HarvestHopeStack Template",
+      "source": {
+        "path": "HarvestHopeStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-us-east-1-d8cbe7ef": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1",
+          "objectKey": "f23df6e5e549e0511c6fa0f246e61480782280539f90daa52634ff962818a658.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

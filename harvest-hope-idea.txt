@@ -1,0 +1,1253 @@
+================================================================================
+                 HARVEST HOPE: THE LAST FARM 
+              AI-Powered Farm Manager for Indian Agriculture Crisis
+================================================================================
+
+PROJECT NAME: Harvest Hope: The Last Farm
+CHALLENGE: Retro Revival
+THEME: Classic game (SimCity farming) + Modern AI twist + Social Impact
+TARGET AUDIENCE: Students, Urban Indians, Farmers, Policy Makers
+
+================================================================================
+                            PROJECT OVERVIEW
+================================================================================
+
+OBJECTIVE:
+Build a retro 16-bit farming simulation game where players manage an Indian 
+farm while learning about:
+- Agricultural economics and real farmer challenges
+- Government schemes (PM-KISAN, Fasal Bima, KCC, etc.)
+- Sustainable farming practices
+- Climate change impact on agriculture
+- Predatory lending vs. legitimate credit
+
+The game addresses India's farmer suicide crisis (10,000+ annually) by building 
+empathy and teaching solutions through gameplay.
+
+GAME CONCEPT:
+Your family's farm is on the brink of collapse. You have one chance - one season
+to turn it around. Weather, markets, and debt loom. Can you save your farm before
+it's gone forever?
+
+RETRO ELEMENT: 
+16-bit pixel art farm simulation (Harvest Moon / SimCity 2000 style)
+CRT scanline shader, 8-bit sound design, green monochrome feel (optional)
+
+AI TWIST:
+- Weather prediction using IMD data patterns (AI meteorologist)
+- Market price simulation based on supply-demand (AI economist)
+- AI-powered crop recommendation engine (agricultural advisor)
+- NPC farmers with AI-generated unique backstories (diverse crises)
+- Adaptive difficulty based on player decisions (learning AI)
+- Educational content generation (AI teacher)
+
+COMPLEXITY & SCOPE:
+- Multi-system integration (weather, crops, economy, loans, markets)
+- State management across 4 seasons/120 days per playthrough
+- Probabilistic event generation (100+ unique scenarios)
+- Economic simulations with real India MSP data
+- Branching decision trees with long-term consequences
+- Property-based testing for game logic correctness
+
+================================================================================
+                        CORE GAME MECHANICS
+================================================================================
+
+1. SEASON CYCLE (120 days per season)
+   Kharif (June-Oct):   Rice, Cotton, Soybean (Monsoon crops)
+   Rabi (Nov-March):    Wheat, Mustard, Chickpea (Winter crops)
+   Zaid (April-May):    Vegetables, Melons (Summer crops)
+   Off-season:          Repairs, Planning, Learning, Family recovery
+
+2. FARM MANAGEMENT
+   - View: Top-down pixel art farm grid (5-10 hectares)
+   - Plant crops in configurable areas
+   - Manage irrigation (rainfed, borewell, canal, drip)
+   - Track soil health and fertility
+   - Hire seasonal labor for planting/harvesting
+   - Buy equipment (seeds, fertilizers, pesticides, tools)
+   - Care for livestock (milk income, daily costs)
+
+3. RESOURCE MANAGEMENT
+   - Starting Capital: ₹50,000 (crisis farm scenario)
+   - Water: Manage irrigation based on rainfall/groundwater
+   - Labor: Seasonal workers (higher costs during peak season)
+   - Time: 120 days per season (every decision uses time)
+   - Family Need: Food, medicine, education (daily expenses)
+
+4. WEATHER SYSTEM (AI-Driven)
+   - Season start: AI predicts monsoon characteristics
+     * Rainfall amount, onset/withdrawal dates
+     * Drought risk, flood risk, extreme events
+   - Daily weather: Generated based on monsoon prediction
+     * Temperature, rainfall, humidity, wind, UV index
+   - Events: Heatwaves, unseasonal rains, pest seasons
+   - Impact: Changes irrigation needs, crop growth, disease risk
+
+5. MARKET SYSTEM (AI-Driven Economics)
+   - Real mandi prices from government data (data.gov.in)
+   - Market volatility: Supply/demand dynamics
+   - MSP (Minimum Support Price): Acts as price floor
+   - Govt Procurement: Activated when price crashes below MSP
+   - Storage Option: Hold crops and wait for better prices
+   - Online Platforms: eNAM, direct sales alternatives
+   - Predictions: AI economist advises on selling timing
+
+6. LOAN SYSTEM (Critical Life Decision)
+   - Bank KCC: 7% interest, requires collateral, 2-week approval
+     * ₹50,000 - ₹300,000 available
+     * Interest subsidy if qualifies (3% subvention)
+   - Moneylender: 36% interest, instant approval, NO collateral
+     * ₹10,000 - ₹100,000 available
+     * WARNING: Can lead to debt spiral, land seizure
+   - PM-KISAN Scheme: ₹6000/year direct payment
+     * Automatic (if Aadhaar linked)
+     * Resets yearly
+   - Consequences: Miss EMI → penalties, interest increases, credit score drops
+
+7. ECONOMIC TRACKING
+   - Income: Crop sales, livestock products, government schemes
+   - Expenses: Seeds, fertilizers, labor, irrigation, electricity, EMI, family
+   - Net worth: Total assets - total debt
+   - Debt tracking: Monthly EMI due, penalties, default warnings
+   - Alerts: Low balance warning, loan default notice, family hunger
+
+8. NPC FARMER INTERACTIONS (AI-Generated Stories)
+   - Meet 5-10 unique farmers with real crises:
+     * Lost farm to bank foreclosure
+     * Son emigrated to city
+     * Wife selling vegetables to supplement
+     * Considering suicide (approached sensitively)
+     * Recently received government help
+   - Relationship system: -100 (hostile) to +100 (close friend)
+   - Dialogue changes based on farm state (success/struggle)
+   - Can give loans to struggling neighbors (affects story)
+   - Learn from their stories: mistakes to avoid, schemes to use
+
+9. EVENT SYSTEM (100+ AI-Generated Scenarios)
+   - Weather events: Heatwave, unseasonal rain, early frost, pest season
+   - Market shocks: Export ban, global price crash, demand surge
+   - Family events: Child illness, father's accident, marriage proposal
+   - Farm emergencies: Borewell dry, tractor breakdown, fire
+   - Social events: Community celebration, neighbor's loss, tax notice
+   - Government: New scheme announcement, MSP change, survey visit
+   - Choices matter: Consequences persist across seasons
+
+10. EDUCATIONAL OVERLAYS
+    - Government schemes encyclopedia (searchable)
+    - Interactive tutorials on each system
+    - Mini-quiz: "True or False: Bank KCC interest is 7%?"
+    - Statistics: Track your progress vs real farmer data
+    - Impact: "You saved ₹50,000 using PM-KISAN this year"
+    - Resources: Links to Kisan Call Center, CSC centers, eNAM
+
+================================================================================
+                            TECHNICAL STACK
+================================================================================
+
+FRONTEND:
+  - React 18 + TypeScript (component-based UI)
+  - PixiJS 8 (2D rendering for retro pixel art)
+  - Tailwind CSS (responsive UI panels, HUD design)
+  - Howler.js (8-bit/chiptune sound effects)
+  - Redux Toolkit (global state management)
+  - Vite (fast build tool)
+  - Web Audio API (spatial audio for alerts)
+
+BACKEND:
+  - AWS Lambda (Python 3.11, event-driven)
+  - AWS DynamoDB (game saves, leaderboards, user progress)
+  - AWS S3 (sprite sheets, sound files, data files)
+  - AWS API Gateway (REST endpoints for game API)
+  - AWS Bedrock (Claude 3.5 Sonnet for AI generation)
+  - AWS CloudWatch (logging, monitoring)
+
+AI & DATA SERVICES:
+  - Claude 3.5 Sonnet (via Bedrock):
+    * Monsoon prediction using historical IMD data
+    * Crop recommendations based on farm conditions
+    * NPC backstory and dialogue generation
+    * Event generation and consequence calculation
+    * Educational content creation
+  
+  - Real Data Sources:
+    * IMD (India Meteorological Dept): 50 years monsoon history
+    * data.gov.in: Mandi prices, MSP rates, agricultural statistics
+    * Ministry of Agriculture: Government scheme details
+    * RBI: Interest rate guidelines for agricultural loans
+
+TESTING:
+  - Jest (unit tests for calculations)
+  - React Testing Library (component testing)
+  - fast-check (property-based testing for game logic)
+  - Puppeteer (end-to-end game flow testing)
+
+DEPLOYMENT:
+  - AWS Amplify (frontend + backend hosting)
+  - GitHub Pages (demo website, docs)
+  - CloudFormation (infrastructure as code)
+  - GitHub Actions (CI/CD pipeline)
+
+================================================================================
+                        GAME STATE INTERFACE
+================================================================================
+
+interface GameState {
+  // PLAYER PROFILE
+  player: {
+    name: string;
+    age: number;
+    region: "maharashtra" | "punjab" | "tamil_nadu" | "karnataka" | "bihar";
+    education_level: "illiterate" | "primary" | "secondary" | "graduate";
+    family_size: number;
+    family_composition: Array<{age: number, name: string, role: string}>;
+    health: number;  // 0-100, affects productivity/decisions
+    mood: number;    // 0-100, affects decision-making
+    skill_level: number;  // 0-100, affects yield efficiency
+  };
+
+  // FARM DATA
+  farm: {
+    name: string;
+    land_hectares: number;
+    soil_type: "black" | "red" | "alluvial" | "laterite";
+    soil_fertility: number;  // 0-100
+    soil_ph: number;  // 6.0-7.5 optimal
+    soil_organic_matter: number;  // % (affects fertility)
+    irrigation_type: "rainfed" | "borewell" | "canal" | "drip" | "tank";
+    water_available: number;  // liters in storage
+    water_capacity: number;  // liters max capacity
+    
+    crops: Array<{
+      crop_id: string;
+      crop_type: "rice" | "wheat" | "cotton" | "soybean" | "mustard" | "chickpea";
+      planted_area: number;  // hectares
+      planted_day: number;  // day of season
+      current_stage: "seedling" | "vegetative" | "flowering" | "mature" | "harvestable";
+      growth_progress: number;  // 0-100%
+      health: number;  // 0-100% (pest damage, disease, stress)
+      irrigation_needs: number;  // mm water needed this season
+      fertilizer_applied: number;  // kg/hectare
+      pesticide_applied: number;  // number of sprays
+      yield_estimate: number;  // kg/hectare estimated at harvest
+      has_crop_insurance: boolean;  // PM Fasal Bima
+    }>;
+    
+    livestock: Array<{
+      type: "cow" | "buffalo" | "goat" | "sheep";
+      count: number;
+      age: number;  // years
+      daily_feed_cost: number;  // ₹
+      daily_milk_income: number;  // ₹
+      health: number;  // 0-100
+    }>;
+    
+    equipment: {
+      tractor: "owned" | "rent" | "none";
+      plough: boolean;
+      harrow: boolean;
+      sprayer: "manual" | "motorized" | "none";
+      thrashing_machine: boolean;
+      borewell: boolean;
+      tube_well: boolean;
+    };
+  };
+
+  // ECONOMICS & LOANS
+  economics: {
+    money: number;  // ₹ in bank account
+    loans: Array<{
+      loan_id: string;
+      lender_type: "bank" | "moneylender" | "govt" | "cooperative";
+      principal: number;  // ₹ borrowed
+      interest_rate: number;  // Annual %
+      duration_months: number;
+      monthly_emi: number;  // ₹
+      paid_months: number;
+      total_paid: number;  // cumulative
+      next_payment_due: string;  // YYYY-MM-DD
+      next_emi_amount: number;
+      is_defaulted: boolean;
+      penalty_charges: number;  // ₹
+      months_overdue: number;
+      is_active: boolean;
+    }>;
+    
+    expenses: Array<{
+      expense_id: string;
+      category: "seeds" | "fertilizer" | "pesticide" | "labor" | "irrigation" | "emi" | "family" | "equipment" | "electricity";
+      amount: number;  // ₹
+      date: string;  // YYYY-MM-DD
+      description: string;
+      notes: string;
+    }>;
+    
+    income: Array<{
+      income_id: string;
+      source: "crop_sale" | "livestock" | "govt_scheme" | "day_labor" | "other";
+      amount: number;  // ₹
+      date: string;
+      description: string;
+      crop_name?: string;  // if crop_sale
+      quantity?: number;  // kg sold
+      price_per_unit?: number;
+    }>;
+    
+    bank_balance: number;
+    total_assets: number;  // Farm + equipment value
+    total_debt: number;
+    net_worth: number;  // assets - debt
+    credit_score: number;  // 300-850 (affects loan eligibility)
+  };
+
+  // SEASON MANAGEMENT
+  season: {
+    year: number;  // 2024, 2025, etc.
+    current_season: "kharif" | "rabi" | "zaid" | "off_season";
+    day_in_season: number;  // 1-120
+    total_days_in_season: number;
+    seasons_completed: number;
+  };
+
+  // WEATHER (AI-Driven)
+  weather: {
+    monsoon_prediction: {
+      season: "kharif" | "rabi";
+      total_rainfall_mm: number;
+      onset_date: string;  // YYYY-MM-DD
+      withdrawal_date: string;
+      drought_risk: number;  // 0-100
+      flood_risk: number;  // 0-100
+      expected_pattern: "uniform" | "erratic" | "delayed" | "early";
+      extreme_events: Array<{day: number, type: string, severity: number}>;
+    };
+    
+    daily_weather: Array<{
+      day: number;
+      temperature_celsius: number;
+      temperature_min: number;
+      temperature_max: number;
+      rainfall_mm: number;
+      humidity_percent: number;
+      wind_speed_kmh: number;
+      uv_index: number;
+      soil_moisture: number;  // 0-100
+      pest_risk: number;  // 0-100 (higher = more pest alerts)
+      disease_risk: number;  // 0-100
+    }>;
+  };
+
+  // NPC INTERACTIONS (AI-Generated)
+  npcs: Array<{
+    npc_id: string;
+    name: string;
+    age: number;
+    village: string;
+    region: string;
+    land_hectares: number;
+    current_crisis: string;  // AI-generated specific crisis
+    crisis_level: number;  // 0-10 (10 = suicidal)
+    personality: "optimistic" | "pragmatic" | "desperate" | "resigned";
+    relationship_with_player: number;  // -100 to +100
+    dialogue_history: Array<string>;
+    advice_given: Array<string>;
+    schemes_using: string[];
+    current_outcome: "thriving" | "struggling" | "lost_farm" | "emigrated" | "suicide";
+    backstory: string;  // AI-generated life story
+    help_needed: string;  // What they want from player
+  }>;
+
+  // STATISTICS & ACHIEVEMENTS
+  stats: {
+    total_crops_planted: number;
+    total_crops_harvested: number;
+    total_harvest_kg: number;
+    total_income: number;  // ₹
+    total_expenses: number;
+    net_profit: number;
+    schemes_used: string[];  // ["PM-KISAN", "Fasal Bima"]
+    government_support_received: number;  // Total ₹
+    loans_taken: number;
+    loans_repaid: number;
+    npcs_helped: number;
+    times_defaulted: number;
+    family_happiness: number;  // 0-100
+    farm_sustainability_score: number;  // 0-100
+    decisions_made: number;
+    critical_choices: Array<string>;
+  };
+
+  // GAME PROGRESS
+  progress: {
+    tutorial_completed: boolean;
+    tutorial_stage: number;  // 0-5
+    schemes_learned: string[];
+    decisions_made: number;
+    game_over: boolean;
+    game_over_reason?: "bankruptcy" | "farm_lost" | "success" | "family_collapse" | "emigration";
+    game_over_message: string;
+    score: number;  // Net profit + sustainability + family happiness
+    playtime_minutes: number;
+    total_seasons_played: number;
+  };
+}
+
+================================================================================
+                        AI INTEGRATION PROMPTS
+================================================================================
+
+1. WEATHER PREDICTION ENGINE (Lambda Function)
+
+Function Name: predictMonsoon(region: string, year: number)
+
+Bedrock Prompt Template:
+```
+You are an agricultural meteorologist analyzing Indian monsoon patterns.
+
+TASK: Predict monsoon characteristics for upcoming season
+
+INPUT:
+Region: {region} (Maharashtra, Punjab, Tamil Nadu, Karnataka, Bihar)
+Year: {year}
+Historical Data: [50 years of IMD data for this region]
+Current Climate Indices:
+  - ENSO: {enso_index} (El Niño/La Niña phase)
+  - IOD: {iod_index} (Indian Ocean Dipole)
+  - NAO: {nao_index} (North Atlantic Oscillation)
+
+OUTPUT (JSON Format):
+
+Generate realistic monsoon prediction:
+1. Total seasonal rainfall (mm):
+   - Must be within region's historical range
+   - 90% of years fall between {percentile_5} - {percentile_95}
+
+2. Monsoon onset date (YYYY-MM-DD):
+   - Typical range: May 20 - July 15
+   - Base on current atmospheric conditions
+
+3. Monsoon withdrawal date (YYYY-MM-DD):
+   - Typical range: September 15 - October 31
+   - Should correlate with onset date
+
+4. Distribution pattern:
+   - "uniform": Steady rainfall throughout season
+   - "erratic": Irregular, concentrated bursts
+   - "delayed": Delayed onset, compressed season
+   - "early": Early withdrawal, shorter season
+
+5. Drought risk (0-100):
+   - >70: Severe drought likely
+   - 40-70: Moderate drought possible
+   - <40: Normal/wet conditions
+
+6. Flood risk (0-100):
+   - >70: Severe flooding likely
+   - 40-70: Moderate flooding possible
+   - <40: Normal flow
+
+7. Extreme weather events (array of dates + severity):
+   [
+     {day: X, type: "heatwave" | "unseasonal_rain" | "pest_season" | "frost", severity: 1-10},
+     ...
+   ]
+
+BASE PREDICTIONS ON:
+- Historical monsoon patterns for this region
+- Current El Niño/La Niña state
+- Indian Ocean Dipole phase (warmer/cooler Indian Ocean)
+- Climate change trends (30-year vs recent 10-year patterns)
+- Current agricultural stress indices
+- Atmospheric pressure patterns
+
+CONSTRAINTS:
+- Drought_Risk + Flood_Risk cannot both exceed 70 (meteorologically impossible)
+- Rainfall must be positive number
+- Dates must be in correct chronological order
+- Make predictions educationally sound and realistic
+
+Return valid JSON only.
+```
+
+2. CROP RECOMMENDATION ENGINE
+
+Function Name: recommendCrops(farmState: Farm, weatherPrediction: Weather)
+
+Bedrock Prompt:
+```
+You are an agricultural extension officer recommending crops to Indian farmers.
+
+TASK: Recommend 3 optimal crops based on farm + weather conditions
+
+FARM PROFILE:
+- Land: {land_hectares} hectares
+- Soil Type: {soil_type} (Black/Red/Alluvial/Laterite)
+- Soil pH: {soil_ph} (Optimal: 6.0-7.5)
+- Soil Fertility: {soil_fertility}% (0-100)
+- Irrigation: {irrigation_type} (Rainfed/Borewell/Canal/Drip)
+- Region: {region}
+- Capital Available: ₹{money}
+- Education Level: {education_level}
+
+WEATHER FORECAST FOR SEASON:
+- Season: {season} (Kharif/Rabi/Zaid)
+- Expected Rainfall: {rainfall}mm
+- Drought Risk: {drought_risk}%
+- Flood Risk: {flood_risk}%
+- Temperature Range: {temp_min}-{temp_max}°C
+
+CURRENT MARKET:
+- Rice Price: ₹{rice_price}/quintal (MSP: ₹{rice_msp})
+- Wheat Price: ₹{wheat_price}/quintal (MSP: ₹{wheat_msp})
+- Cotton Price: ₹{cotton_price}/quintal (MSP: ₹{cotton_msp})
+- Demand: {export_demand} (Low/Medium/High)
+
+GOVERNMENT SUPPORT AVAILABLE:
+- PM Fasal Bima Yojana: {fasal_bima_available} (Crop Insurance)
+- MSP Procurement: {msp_procurement_available}
+- Subsidies: {subsidy_details}
+
+OUTPUT (JSON Format):
+
+RECOMMEND 3 CROPS:
+
+1. SAFE CROP (Low risk, guaranteed return)
+   {
+     "name": "Crop Name",
+     "why_safe": "Why this crop is safe for this farmer",
+     "risk_level": "Low",
+     "initial_investment": ₹amount,
+     "expected_yield": X ton/hectare,
+     "expected_revenue": ₹amount,
+     "market_price": ₹amount/quintal,
+     "msp_available": true/false,
+     "government_scheme": "Name",
+     "water_requirement": "mm (compare to rainfall)",
+     "labour_needed": "High/Medium/Low",
+     "risks": ["List of potential risks"],
+     "success_probability": 80%
+   }
+
+2. MEDIUM RISK CROP (Better returns, some uncertainty)
+   [Similar structure]
+
+3. HIGH REWARD CROP (Cash crop, volatile market)
+   [Similar structure]
+
+FOR EACH CROP:
+- Calculate soil suitability (1-10 score)
+- Compare water requirements vs available water
+- Factor in labour availability and costs
+- Check government scheme eligibility
+- Assess market demand and price stability
+- Give specific guidance for this farmer's situation
+
+REASONING:
+- Explain why these 3 crops are optimal combination
+- Highlight which single crop if farmer can only plant one
+- Mention crop rotation benefits if applicable
+- Suggest timing (early/mid/late season planting)
+
+TONE: Practical, supportive, realistic for small Indian farmer
+
+Return valid JSON only.
+```
+
+3. NPC FARMER GENERATOR
+
+Function Name: generateNPC(region: string, crisis_level: 1-10)
+
+Bedrock Prompt:
+```
+Create a realistic Indian farmer character for a farming simulation game.
+This is for EDUCATIONAL PURPOSE to build empathy and teach about farmer challenges.
+
+TASK: Generate emotionally authentic but respectful farmer character
+
+INPUT:
+Region: {region} (Maharashtra/Punjab/Tamil Nadu/Karnataka/Bihar/Jharkhand)
+Crisis Level: {crisis_level}/10 (1=thriving, 10=suicidal)
+
+OUTPUT (JSON Format):
+
+{
+  "personal": {
+    "name": "Realistic name for region",
+    "age": 35-65,
+    "village": "Name of village/town",
+    "land_hectares": 1-5,
+    "family": {
+      "size": number,
+      "composition": [
+        {relationship: "Wife", age: X, occupation: ""},
+        {relationship: "Son", age: X, occupation: ""},
+        ...
+      ]
+    },
+    "education": "Illiterate/Primary/Secondary/Graduate"
+  },
+
+  "situation": {
+    "current_problem": "Specific crisis they're facing",
+    "crisis_timeline": "How long this has been going on",
+    "financial_status": "₹ total debt",
+    "current_crops": ["List what they're growing"],
+    "equipment": "What they own/use",
+    "recent_event": "What triggered the crisis"
+  },
+
+  "personality": {
+    "archetype": "Optimistic/Pragmatic/Desperate/Resigned",
+    "emotional_state": "Description",
+    "communication_style": "How they speak",
+    "core_fear": "What worries them most",
+    "core_hope": "What gives them hope"
+  },
+
+  "dialogue": [
+    "Greeting they'd say to player",
+    "Description of their current situation",
+    "Question/request for player",
+    "Expression of hope or despair"
+  ],
+
+  "backstory": {
+    "where_started": "Family history, how farm began",
+    "what_went_wrong": "Series of events leading to crisis",
+    "key_mistakes": ["Decisions that led here"],
+    "what_would_help": "What interventions would help",
+    "potential_outcomes": {
+      "positive": "If they get support",
+      "negative": "If things continue",
+      "suicide_risk": true/false
+    }
+  },
+
+  "interaction": {
+    "relationship_potential": 1-10,
+    "can_player_help": true/false,
+    "help_types": ["Loan", "Advice", "Share scheme info", "Labor", "etc"],
+    "dialogue_response_triggers": {
+      "player_mentions_scheme": "Response about government help",
+      "player_shares_success": "Response to player's good harvest",
+      "player_faces_crisis": "Response of solidarity",
+      "player_offers_help": "Grateful/desperate reaction"
+    }
+  },
+
+  "story_arc": {
+    "day_1_to_40": "Initial state and problem revelation",
+    "day_41_to_80": "How situation evolves based on player choices",
+    "day_81_to_120": "Potential resolution or deterioration",
+    "multiple_playthroughs": "Different outcomes possible"
+  },
+
+  "educational_value": [
+    "What player learns about farmer challenges",
+    "Which government schemes are relevant",
+    "Emotional/empathy lesson",
+    "Economic lesson"
+  ]
+}
+
+GUIDELINES:
+- Make characters diverse (different regions, crises, ages)
+- Balance tragedy with dignity (not exploitative)
+- Include true stories that reflect India (not stereotypes)
+- Show agency: farmers making choices, not just victims
+- Make some characters succeed with schemes/help
+- Make crisis level correspond to dialogue tone
+- Include specific details (crop names, ₹ amounts, dates)
+- Make story feel personal and real
+
+TONE: Respectful, realistic, educational not entertainment-focused
+
+Return valid JSON only.
+```
+
+4. MARKET PRICE SIMULATOR
+
+Function Name: simulateMarketPrice(crop: string, supply_shock: float, demand: float)
+
+Bedrock Prompt:
+```
+You are an agricultural economist analyzing Indian mandi (market) prices.
+
+TASK: Simulate realistic market price for harvest day
+
+INPUT:
+Crop: {crop} (Rice/Wheat/Cotton/Soybean/Mustard/Chickpea)
+MSP (Govt Support): ₹{msp}/quintal
+Historical Price: ₹{historical_avg}/quintal
+Supply Shock: {supply_shock} (-1=extreme shortage, 0=balanced, +1=bumper harvest)
+Demand: {demand} (0=low, 0.5=medium, 1.0=high - includes exports)
+Recent Events: {recent_market_events}
+
+OUTPUT (JSON Format):
+
+{
+  "market_analysis": {
+    "current_price": ₹amount/quintal,
+    "msp_guarantee": ₹{msp}/quintal,
+    "price_vs_msp": "Below/At/Above",
+    "reason": "Why market price is at this level",
+    "price_trend": "Rising/Falling/Stable",
+    "confidence": 0.7-0.9
+  },
+
+  "selling_advice": {
+    "should_sell_now": true/false,
+    "sell_timing": "Immediate/Within 1-2 weeks/Wait 2+ weeks",
+    "reason": "Explanation for timing advice",
+    "alternative_markets": [
+      {name: "Government Procurement", guaranteed_price: ₹{msp}, process: "Description"},
+      {name: "eNAM Platform", price: "₹{current}", advantage: "No middleman"},
+      {name: "Direct to Industry", price: "Negotiable", advantage: "Higher price potentially"},
+      {name: "Farmer Producer Org (FPO)", price: "₹{estimated}", advantage: "Bulk selling power"}
+    ],
+    "risk_assessment": {
+      "if_sell_now": "Lock in current price",
+      "if_wait_1_week": "Price likely ₹X to ₹Y range",
+      "if_wait_2_weeks": "Higher risk, potential +₹200 or -₹500",
+      "risk_factors": ["List of factors affecting price"]
+    }
+  },
+
+  "government_support": {
+    "msp_procurement_active": true/false,
+    "where_to_sell": "NAFED/APMC/CSC details",
+    "storage_subsidy": "If available for waiting",
+    "transportation_support": "What's available",
+    "tax_benefits": "If applicable"
+  },
+
+  "financial_impact": {
+    "if_price_holds": "Revenue = Yield × ₹{current_price}",
+    "breakeven": "Costs were ₹X, minimum must get ₹X",
+    "profit_margin": "If sells at ₹{current_price}",
+    "debt_impact": "Can pay EMI? Surplus/deficit?"
+  },
+
+  "educational_note": "What farmer should learn about market dynamics"
+}
+
+CONSTRAINTS:
+- Price never below 50% MSP (govt procurement prevents collapse)
+- Price rarely exceeds 2× MSP (unless extreme shortage)
+- Price changes realistic (5-30% typical variation)
+- Supply/demand impacts proportional to magnitude
+
+BASE PRICES ON:
+- Real historical mandi prices for this crop/region
+- Government MSP rates (current year)
+- Global commodity prices if applicable
+- Domestic supply from this season
+- Export demand from international markets
+
+TONE: Practical advice for actual farmer selling
+
+Return valid JSON only.
+```
+
+5. EVENT GENERATOR
+
+Function Name: generateEvent(gameState: GameState, day: number, difficulty: float)
+
+Bedrock Prompt:
+```
+Generate a realistic farming event for Indian farmer game.
+
+TASK: Create emotionally resonant, educationally valuable event
+
+INPUT:
+Season: {season} (Kharif/Rabi/Zaid)
+Day: {day}/120
+Farm Condition: {condition} (Thriving/Struggling/Crisis)
+Recent Events: {recent_events}
+Current Weather: {weather_today}
+Market Situation: {market_prices}
+Difficulty Level: {difficulty} (0.3=easy, 0.7=hard)
+Crisis_Level: {crisis_level}
+
+OUTPUT (JSON Format):
+
+{
+  "event": {
+    "title": "Short punchy title",
+    "description": "2-3 lines atmospheric description",
+    "timestamp": "What time of day",
+    "location": "Farm/Home/Market/Village"
+  },
+
+  "type": "weather | economic | health | emergency | social | government | opportunity",
+  "severity": 1-10,
+  "probability_occurs": 0.3 (only generate if random < this),
+
+  "context": {
+    "who_involved": ["Player", "Family", "NPC", "Official", "etc"],
+    "background": "Why this event is happening now",
+    "immediate_pressure": "What urgency/deadline"
+  },
+
+  "choices": [
+    {
+      "choice_id": 1,
+      "text": "Option 1 (clear, specific action)",
+      "cost": ₹amount,
+      "time_cost": days_used,
+      "consequence": {
+        "short_term": "Immediate result (this day/week)",
+        "long_term": "Lasting impact",
+        "success_probability": 0.7
+      },
+      "impact_on": {
+        "money": +₹500,
+        "health": 0,
+        "mood": -20,
+        "crop_health": 0,
+        "family_happiness": +10,
+        "credit_score": 0,
+        "relationships": [{npc: "Ramu", change: +5}]
+      },
+      "dialogue_response": "What NPC/family member would say if player chooses this",
+      "best_choice": false
+    },
+    {
+      "choice_id": 2,
+      ...
+    },
+    {
+      "choice_id": 3,
+      ...
+    }
+  ],
+
+  "educational_value": {
+    "teaches_about": "What farming/economic concept",
+    "real_world_context": "How this reflects actual farmer experiences",
+    "schemes_mentioned": ["Which govt schemes relevant"],
+    "learning_opportunity": "What player should realize"
+  },
+
+  "outcome_tracking": {
+    "choice_selected": "Which choice player makes",
+    "actual_result": "What actually happens",
+    "lesson_learned": "Narrative reflection",
+    "next_event_trigger": "What happens next (if anything)"
+  }
+}
+
+EVENT TYPES & EXAMPLES:
+
+1. WEATHER EVENTS:
+   - Unexpected heatwave during critical growth stage
+   - Unseasonal rain just before harvest
+   - Pest season earlier than predicted
+   - Borewell runs dry mid-season
+   - Early frost damages young plants
+
+2. ECONOMIC EVENTS:
+   - Sudden market price crash (global or local)
+   - Commodity hoarding notice
+   - Unexpected expense (tax notice, equipment repair)
+   - Opportunity: Good prices, can sell early
+   - Government announces new MSP
+
+3. HEALTH/FAMILY EVENTS:
+   - Child gets sick (needs medicine)
+   - Family member injured (needs treatment)
+   - School fees due
+   - Marriage celebration opportunity
+   - Elder parent health crisis
+
+4. FARM EMERGENCIES:
+   - Tractor breaks down at critical time
+   - Borewell needs expensive repair
+   - Crop fire/animal attack
+   - Theft of stored grain
+   - Equipment borrowed but not returned
+
+5. SOCIAL EVENTS:
+   - Neighboring farm crisis (drought, loss)
+   - Community celebration/festival
+   - Social obligation (helping neighbor)
+   - Land dispute with neighbor
+   - Government official visit
+
+6. GOVERNMENT EVENTS:
+   - New scheme announcement (PM-KISAN enhancement)
+   - MSP increase announcement
+   - Crop insurance claim notice
+   - Tax collection notice
+   - Agricultural survey/assessment
+
+7. OPPORTUNITY EVENTS:
+   - Good price window (sell high)
+   - Free training offered
+   - Government subsidy opportunity
+   - Cooperative membership drive
+   - Buyer visiting region (direct sale)
+
+GUIDELINES:
+- Make 30-50% chance per day (not too frequent)
+- Increase frequency when difficulty high
+- Mix positive and negative events
+- Make consequences visible across season
+- Include multiple solution paths (no single "right" answer)
+- Show trade-offs (help NPC = lose time/money)
+- Reference real government schemes
+- Use specific ₹ amounts (not vague)
+- Make dialogue authentic to region/character
+
+CONSTRAINTS:
+- Cannot generate impossible outcomes (yield > biological max)
+- Cannot skip seasons or days
+- Must be emotionally respectful (not exploitative)
+
+TONE: Realistic, educational, empathetic, consequence-focused
+
+Return valid JSON only.
+```
+
+================================================================================
+                        PROPERTY-BASED TESTS
+================================================================================
+
+1. EMI CALCULATION - Financial Correctness
+
+Property: EMI formula produces valid monthly payments
+
+Test (Pseudocode):
+```
+forAll(
+  principal in 10000..500000,
+  annual_rate in 0.07..0.36,
+  duration_months in 6..60
+) {
+  const monthly_rate = annual_rate / 12;
+  const emi = principal * monthly_rate * 
+    Math.pow(1 + monthly_rate, duration_months) / 
+    (Math.pow(1 + monthly_rate, duration_months) - 1);
+  
+  const total_paid = emi * duration_months;
+  const interest_paid = total_paid - principal;
+  
+  // Assertions
+  assert(emi > 0, "EMI must be positive");
+  assert(total_paid > principal, "Must pay more than borrowed");
+  assert(total_paid < principal * 2, "Won't exceed 2× for rates < 36%");
+  assert(interest_paid > 0, "Interest must be charged");
+  
+  // Bank rates should produce lower EMI than moneylender
+  const bank_emi = calculateEMI(principal, 0.07, 12);
+  const money_lender_emi = calculateEMI(principal, 0.36, 12);
+  assert(money_lender_emi > bank_emi, "Moneylender EMI > Bank EMI");
+}
+```
+
+2. YIELD CALCULATION - Agricultural Realism
+
+Property: Crop yield stays within biological bounds
+
+Test:
+```
+forAll(
+  crop in ["rice", "wheat", "cotton", "soybean"],
+  rainfall_mm in 0..3000,
+  irrigation_percent in 0..100,
+  soil_fertility in 0..100,
+  pest_damage in 0..100
+) {
+  const max_yield = CROP_MAX_YIELD[crop];  // 4-6 tons/ha typical
+  const min_yield = 0;
+  
+  const yield = calculateYield(
+    crop, 
+    rainfall_mm, 
+    irrigation_percent, 
+    soil_fertility, 
+    pest_damage
+  );
+  
+  // Assertions
+  assert(yield >= min_yield, "Yield cannot be negative");
+  assert(yield <= max_yield, "Yield within biological limit");
+  
+  // More water = more yield (until saturation)
+  if (irrigation_percent < 80) {
+    const yield_with_more_water = calculateYield(
+      crop, 
+      rainfall_mm, 
+      irrigation_percent + 10, 
+      soil_fertility, 
+      pest_damage
+    );
+    assert(yield_with_more_water >= yield, "More water = same/higher yield");
+  }
+  
+  // More pest damage = less yield
+  const yield_with_less_damage = calculateYield(
+    crop, 
+    rainfall_mm, 
+    irrigation_percent, 
+    soil_fertility, 
+    pest_damage - 10
+  );
+  assert(yield_with_less_damage >= yield, "Less damage = same/higher yield");
+  
+  // Better soil = better yield
+  const yield_better_soil = calculateYield(
+    crop, 
+    rainfall_mm, 
+    irrigation_percent, 
+    soil_fertility + 10, 
+    pest_damage
+  );
+  assert(yield_better_soil >= yield, "Better soil = same/higher yield");
+}
+```
+
+3. MONSOON PREDICTION - Weather Bounds
+
+Property: Drought and flood risks are mutually exclusive extremes
+
+Test:
+```
+forAll(
+  region in ["maharashtra", "punjab", "tamil_nadu"],
+  year in 2000..2050
+) {
+  const prediction = predictMonsoon(region, year);
+  
+  // Assertions
+  assert(prediction.drought_risk >= 0, "Drought risk ≥ 0");
+  assert(prediction.drought_risk <= 100, "Drought risk ≤ 100");
+  assert(prediction.flood_risk >= 0, "Flood risk ≥ 0");
+  assert(prediction.flood_risk <= 100, "Flood risk ≤ 100");
+  
+  // Cannot both be high risk
+  if (prediction.drought_risk > 70) {
+    assert(prediction.flood_risk < 30, "High drought ⟹ Low flood");
+  }
+  if (prediction.flood_risk > 70) {
+    assert(prediction.drought_risk < 30, "High flood ⟹ Low drought");
+  }
+  
+  // Rainfall within region bounds
+  const {percentile_5, percentile_95} = REGION_RAINFALL_BOUNDS[region];
+  assert(
+    prediction.total_rainfall_mm >= percentile_5 * 0.7 &&
+    prediction.total_rainfall_mm <= percentile_95 * 1.3,
+    "Rainfall in reasonable range"
+  );
+  
+  // Dates in correct order
+  assert(
+    new Date(prediction.onset_date) <= new Date(prediction.withdrawal_date),
+    "Onset before withdrawal"
+  );
+}
+```
+
+4. MARKET PRICE - Economics Bounds
+
+Property: Market prices stay within realistic ranges
+
+Test:
+```
+forAll(
+  crop in ["rice", "wheat", "cotton"],
+  supply_shock in -1..1,
+  demand_level in 0..1
+) {
+  const msp = MSP_DATA[crop];
+  const price = simulateMarketPrice(crop, supply_shock, demand_level);
+  
+  // Assertions
+  assert(price > 0, "Price must be positive");
+  
+  // Government prevents crash below 50% MSP
+  assert(price >= msp * 0.5, "Price won't collapse below 50% MSP");
+  
+  // Price under extreme shortage can spike
+  if (supply_shock < -0.8) {
+    assert(price <= msp * 3, "Extreme shortage can reach 3× MSP max");
+  } else {
+    assert(price <= msp * 2, "Normal shortage max 2× MSP");
+  }
+  
+  // Supply impact is proportional
+  if (supply_shock < 0) {  // Shortage
+    assert(price > msp, "Shortage raises price");
+  }
+  if (supply_shock > 0.5) {  // Bumper harvest
+    assert(price < msp, "Bumper harvest can crash below MSP");
+  }
+  
+  // Demand increases price
+  const price_high_demand = simulateMarketPrice(crop, supply_shock, 1.0);
+  const price_low_demand = simulateMarketPrice(crop, supply_shock, 0.0);
+  assert(price_high_demand >= price_low_demand, "Higher demand = higher price");
+}
+```
+
+5. CROP GROWTH - Progression Logic
+
+Property: Crop growth is monotonic and reaches maturity
+
+Test:
+```
+forAll(
+  crop in ["rice", "wheat", "cotton"],
+  days_since_planted in 1..120,
+  optimal_conditions is true
+) {
+  const growth_today = calculateGrowth(crop, days_since_planted, optimal_conditions);
+  const growth_yesterday = calculateGrowth(crop, days_since_planted - 1, optimal_conditions);
+  
+  // Assertions
+  assert(growth_today >= growth_yesterday, "Growth is monotonic");
+  assert(growth_today <= 100, "Growth capped at 100%");
+  
+  // Should reach maturity by season end
+  const CROP_MATURITY_DAYS = CROP_CYCLE[crop];  // 90-120 days
+  const growth_at_maturity = calculateGrowth(crop, CROP_MATURITY_DAYS, optimal_conditions);
+  assert(growth_at_maturity >= 95, "Reaches 95%+ at maturity under optimal");
+  
+  // Worse conditions = slower growth
+  const growth_stressed = calculateGrowth(crop, days_since_planted, false);  // stressed
+  assert(growth_stressed <= growth_today, "Stress reduces growth rate");
+}
+```
+
+================================================================================
+                     BUILD SCHEDULE
+================================================================================
+
+DAY 1: PROJECT SETUP & CORE SYSTEMS
+  ✓ Initialize React + TypeScript + PixiJS project
+  ✓ Setup AWS Lambda + DynamoDB schema
+  ✓ Create project repository (GitHub)
+  ✓ Build basic PixiJS farm grid rendering
+  ✓ Implement player character sprite and movement
+  ✓ Create Redux game state reducer
+  ✓ Setup DynamoDB for save games
+  ✓ Create basic UI (HUD showing money, day, season)
+
+DAY 2: WEATHER & SEASONAL SYSTEMS
+  ✓ Build Lambda function for monsoon prediction
+  ✓ Integrate real IMD historical data source
+  ✓ Implement daily weather generation logic
+  ✓ Create weather forecast display UI
+  ✓ Implement seasonal UI (current season, day, progress bar)
+  ✓ Connect weather to crop growth calculations
+  ✓ Add weather event system (drought, flood, pest alerts)
+
+DAY 3: CROP MANAGEMENT SYSTEM
+  ✓ Build crop planting mechanics (select crop, area, seed cost)
+  ✓ Implement 4-stage growth simulation (seedling→mature)
+  ✓ Create pixel art sprites for crops (different growth stages)
+  ✓ Build crop health tracking (pest damage, water stress, disease)
+  ✓ Implement harvest calculation (yield × weather × soil × pests)
+  ✓ Create inventory system (seeds, fertilizers, pesticides)
+  ✓ Display market price for each crop
+
+DAY 4: ECONOMY & FINANCIAL SYSTEM
+  ✓ Build loan system UI (Bank KCC, Moneylender, PM-KISAN)
+  ✓ Implement EMI calculation + payment tracking
+  ✓ Create property-based tests for EMI formula
+  ✓ Build market price simulator Lambda function
+  ✓ Implement harvest → sale workflow
+  ✓ Create financial tracking UI (income, expenses, net worth, debt)
+  ✓ Add loan default penalties and credit score system
+  ✓ Build government scheme encyclopedia UI
+
+DAY 5: AI SYSTEMS & NPC INTERACTIONS
+  ✓ Build crop recommendation engine (Lambda + Bedrock)
+  ✓ Implement NPC farmer generation (Bedrock Claude)
+  ✓ Build NPC dialogue system (contextual responses)
+  ✓ Implement event generator (Lambda + Bedrock)
+  ✓ Build random event display UI + choice system
+  ✓ Implement consequence tracking for choices
+  ✓ Add NPC relationship tracking system
+
+DAY 6: RETRO GRAPHICS & AUDIO POLISH
+  ✓ Create pixel art sprites (farm, crops, UI, NPCs, player)
+  ✓ Implement CRT scanline shader effect
+  ✓ Create animated crop growth stages
+  ✓ Add 8-bit background music (chiptune composer)
+  ✓ Add sound effects (plant, harvest, money, alerts, UI)
+  ✓ Implement pixel font for UI text
+  ✓ Optimize color palette (16-bit aesthetic)
+
+DAY 7: DEPLOYMENT & DOCUMENTATION
+  ✓ Deploy frontend to AWS Amplify
+  ✓ Setup CloudFormation for infrastructure
+  ✓ Test on mobile/desktop/tablet
+  ✓ Create comprehensive AWS Builder Center blog post
+  ✓ Record 60-second demo video
+  ✓ Write .kiro/specs/ (requirements.md, design.md, tasks.md)
+  ✓ Submit to AI for Bharat hackathon
+  ✓ Create GitHub README with setup instructions
+
+================================================================================
+                        PROJECT SUBMISSION TITLE
+================================================================================
+
+"Harvest Hope: The Last Farm - Retro Farm Simulator Powered by AI to Address 
+India's Agricultural Crisis with Weather Prediction, Economic Simulation, and 
+Farmer Education"
+
+SUBTITLE:
+"A 16-bit pixel art game teaching financial literacy, government schemes, and 
+farmer resilience for 10,000+ annual farmer suicides in India"
+
+================================================================================
+                        SUCCESS METRICS
+================================================================================
+
+✅ GOLD TIER DELIVERABLES:
+
+Frontend:
+  - ✓ Retro 16-bit pixel art aesthetic (compelling nostalgia)
+  - ✓ Smooth 60 FPS gameplay (PixiJS optimized)
+  - ✓ Responsive UI (mobile/tablet/desktop)
+  - ✓ 8-bit chiptune music + sound effects
+  - ✓ CRT scanline shader effect
+
+Backend:
+  - ✓ 5 Lambda functions (weather, crops, NPCs, market, events)
+  - ✓ AWS Bedrock integration (Claude 3.5 Sonnet)
+  - ✓ DynamoDB with game saves + leaderboards
+  - ✓ Real data integration (IMD, mandi prices, MSP)
+
+Gameplay:
+  - ✓ 8+ hours unique content per playthrough
+  - ✓ 100+ AI-generated unique events
+  - ✓ 5-10 NPC farmers with unique stories
+  - ✓ Multiple endings (success/bankruptcy/emigration)
+  - ✓ Branching narrative based on choices
+
+Kiro/Testing:
+  - ✓ .kiro/specs/ with EARS requirements
+  - ✓ 5+ property-based tests for game logic
+  - ✓ 30+ implementation tasks (daily breakdown)
+  - ✓ Correctness properties validated
+
+Social Impact:
+  - ✓ Addresses farmer suicide crisis (10,000+/year)
+  - ✓ Educational about govt schemes (PM-KISAN, Fasal Bima)
+  - ✓ Teaches financial literacy (loans, EMI, debt)
+  - ✓ Builds empathy through NPC stories
+
+Quality:
+  - ✓ 5,000+ lines well-tested code
+  - ✓ 98%+ property-based test pass rate
+  - ✓ Zero critical bugs at submission
+  - ✓ Fully deployed on AWS Amplify
+
+================================================================================
+
+
+This comprehensive document contains EVERYTHING needed to build "Harvest Hope: 
+The Last Farm"

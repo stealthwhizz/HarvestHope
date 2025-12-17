@@ -1,0 +1,1683 @@
+{
+ "Resources": {
+  "GameStatesTable087CAC25": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "playerId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "saveSlot",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "playerId",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "saveSlot",
+      "KeyType": "RANGE"
+     }
+    ],
+    "TableName": "harvest-hope-game-states",
+    "TimeToLiveSpecification": {
+     "AttributeName": "ttl",
+     "Enabled": true
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/GameStatesTable/Resource"
+   }
+  },
+  "NPCTemplatesTableCEDB6B6E": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "templateId",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "templateId",
+      "KeyType": "HASH"
+     }
+    ],
+    "TableName": "harvest-hope-npc-templates"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/NPCTemplatesTable/Resource"
+   }
+  },
+  "MarketDataTable771A5D64": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "crop",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "date",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "crop",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "date",
+      "KeyType": "RANGE"
+     }
+    ],
+    "TableName": "harvest-hope-market-data"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/MarketDataTable/Resource"
+   }
+  },
+  "PlayerStatsTable817F8DE7": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "playerId",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "playerId",
+      "KeyType": "HASH"
+     }
+    ],
+    "TableName": "harvest-hope-player-stats"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/PlayerStatsTable/Resource"
+   }
+  },
+  "AssetsBucket5CB76180": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "BucketName": "harvest-hope-assets",
+    "CorsConfiguration": {
+     "CorsRules": [
+      {
+       "AllowedHeaders": [
+        "*"
+       ],
+       "AllowedMethods": [
+        "GET"
+       ],
+       "AllowedOrigins": [
+        "*"
+       ]
+      }
+     ]
+    },
+    "PublicAccessBlockConfiguration": {
+     "BlockPublicAcls": true,
+     "IgnorePublicAcls": true
+    },
+    "WebsiteConfiguration": {
+     "IndexDocument": "index.html"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/AssetsBucket/Resource"
+   }
+  },
+  "AssetsBucketPolicyFFACF6C4": {
+   "Type": "AWS::S3::BucketPolicy",
+   "Properties": {
+    "Bucket": {
+     "Ref": "AssetsBucket5CB76180"
+    },
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "s3:GetObject",
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          {
+           "Fn::GetAtt": [
+            "AssetsBucket5CB76180",
+            "Arn"
+           ]
+          },
+          "/*"
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/AssetsBucket/Policy/Resource"
+   }
+  },
+  "DataBucketE3889A50": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "BucketName": "harvest-hope-data"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/DataBucket/Resource"
+   }
+  },
+  "ConfigsBucketD1DC7D08": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "BucketName": "harvest-hope-configs"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/ConfigsBucket/Resource"
+   }
+  },
+  "LambdaExecutionRoleD5C26073": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ],
+    "Policies": [
+     {
+      "PolicyDocument": {
+       "Statement": [
+        {
+         "Action": [
+          "dynamodb:DeleteItem",
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:Query",
+          "dynamodb:Scan",
+          "dynamodb:UpdateItem"
+         ],
+         "Effect": "Allow",
+         "Resource": [
+          {
+           "Fn::GetAtt": [
+            "GameStatesTable087CAC25",
+            "Arn"
+           ]
+          },
+          {
+           "Fn::GetAtt": [
+            "MarketDataTable771A5D64",
+            "Arn"
+           ]
+          },
+          {
+           "Fn::GetAtt": [
+            "NPCTemplatesTableCEDB6B6E",
+            "Arn"
+           ]
+          },
+          {
+           "Fn::GetAtt": [
+            "PlayerStatsTable817F8DE7",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ],
+       "Version": "2012-10-17"
+      },
+      "PolicyName": "DynamoDBAccess"
+     },
+     {
+      "PolicyDocument": {
+       "Statement": [
+        {
+         "Action": [
+          "s3:GetObject",
+          "s3:PutObject"
+         ],
+         "Effect": "Allow",
+         "Resource": [
+          {
+           "Fn::Join": [
+            "",
+            [
+             {
+              "Fn::GetAtt": [
+               "ConfigsBucketD1DC7D08",
+               "Arn"
+              ]
+             },
+             "/*"
+            ]
+           ]
+          },
+          {
+           "Fn::Join": [
+            "",
+            [
+             {
+              "Fn::GetAtt": [
+               "DataBucketE3889A50",
+               "Arn"
+              ]
+             },
+             "/*"
+            ]
+           ]
+          }
+         ]
+        }
+       ],
+       "Version": "2012-10-17"
+      },
+      "PolicyName": "S3Access"
+     },
+     {
+      "PolicyDocument": {
+       "Statement": [
+        {
+         "Action": [
+          "bedrock:InvokeModel",
+          "bedrock:InvokeModelWithResponseStream"
+         ],
+         "Effect": "Allow",
+         "Resource": "*"
+        }
+       ],
+       "Version": "2012-10-17"
+      },
+      "PolicyName": "BedrockAccess"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/LambdaExecutionRole/Resource"
+   }
+  },
+  "WeatherFunctionB4B1B979": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "ZipFile": "\ndef handler(event, context):\n    return {\n        'statusCode': 200,\n        'body': '{\"message\": \"Weather service placeholder\"}'\n    }\n      "
+    },
+    "Environment": {
+     "Variables": {
+      "GAME_STATES_TABLE": {
+       "Ref": "GameStatesTable087CAC25"
+      },
+      "DATA_BUCKET": {
+       "Ref": "DataBucketE3889A50"
+      }
+     }
+    },
+    "Handler": "weather.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "LambdaExecutionRoleD5C26073",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11"
+   },
+   "DependsOn": [
+    "LambdaExecutionRoleD5C26073"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/WeatherFunction/Resource"
+   }
+  },
+  "MarketFunctionA7C99C42": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "ZipFile": "\ndef handler(event, context):\n    return {\n        'statusCode': 200,\n        'body': '{\"message\": \"Market service placeholder\"}'\n    }\n      "
+    },
+    "Environment": {
+     "Variables": {
+      "MARKET_DATA_TABLE": {
+       "Ref": "MarketDataTable771A5D64"
+      },
+      "DATA_BUCKET": {
+       "Ref": "DataBucketE3889A50"
+      }
+     }
+    },
+    "Handler": "market.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "LambdaExecutionRoleD5C26073",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11"
+   },
+   "DependsOn": [
+    "LambdaExecutionRoleD5C26073"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/MarketFunction/Resource"
+   }
+  },
+  "NPCFunctionA36487FF": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "ZipFile": "\ndef handler(event, context):\n    return {\n        'statusCode': 200,\n        'body': '{\"message\": \"NPC service placeholder\"}'\n    }\n      "
+    },
+    "Environment": {
+     "Variables": {
+      "NPC_TEMPLATES_TABLE": {
+       "Ref": "NPCTemplatesTableCEDB6B6E"
+      }
+     }
+    },
+    "Handler": "npc.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "LambdaExecutionRoleD5C26073",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11"
+   },
+   "DependsOn": [
+    "LambdaExecutionRoleD5C26073"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/NPCFunction/Resource"
+   }
+  },
+  "EventFunction95C95973": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "ZipFile": "\ndef handler(event, context):\n    return {\n        'statusCode': 200,\n        'body': '{\"message\": \"Event service placeholder\"}'\n    }\n      "
+    },
+    "Handler": "event.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "LambdaExecutionRoleD5C26073",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11"
+   },
+   "DependsOn": [
+    "LambdaExecutionRoleD5C26073"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/EventFunction/Resource"
+   }
+  },
+  "GameStateFunctionE5C43106": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "ZipFile": "\ndef handler(event, context):\n    return {\n        'statusCode': 200,\n        'body': '{\"message\": \"Game state service placeholder\"}'\n    }\n      "
+    },
+    "Environment": {
+     "Variables": {
+      "GAME_STATES_TABLE": {
+       "Ref": "GameStatesTable087CAC25"
+      },
+      "PLAYER_STATS_TABLE": {
+       "Ref": "PlayerStatsTable817F8DE7"
+      }
+     }
+    },
+    "Handler": "gamestate.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "LambdaExecutionRoleD5C26073",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11"
+   },
+   "DependsOn": [
+    "LambdaExecutionRoleD5C26073"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/GameStateFunction/Resource"
+   }
+  },
+  "HarvestHopeAPID5BC3561": {
+   "Type": "AWS::ApiGateway::RestApi",
+   "Properties": {
+    "Description": "API for Harvest Hope farming simulation game",
+    "Name": "Harvest Hope Game API"
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Resource"
+   }
+  },
+  "HarvestHopeAPIDeployment6629B5052eaff2a31049670d687b2442602fee50": {
+   "Type": "AWS::ApiGateway::Deployment",
+   "Properties": {
+    "Description": "API for Harvest Hope farming simulation game",
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "DependsOn": [
+    "HarvestHopeAPIeventsOPTIONS588BB01C",
+    "HarvestHopeAPIeventsPOST7DE34261",
+    "HarvestHopeAPIevents52101455",
+    "HarvestHopeAPIgamestateplayerIdGET70790E7B",
+    "HarvestHopeAPIgamestateplayerIdOPTIONS2AADFEEF",
+    "HarvestHopeAPIgamestateplayerIdPOST048EDA43",
+    "HarvestHopeAPIgamestateplayerId83629BAA",
+    "HarvestHopeAPIgamestateOPTIONS9894D733",
+    "HarvestHopeAPIgamestate8E092E03",
+    "HarvestHopeAPImarketOPTIONS5756F56F",
+    "HarvestHopeAPImarketPOST847EB9BA",
+    "HarvestHopeAPImarket081FC8DD",
+    "HarvestHopeAPInpcOPTIONS1355A8FB",
+    "HarvestHopeAPInpcPOSTFCCD5E1E",
+    "HarvestHopeAPInpc22C970B3",
+    "HarvestHopeAPIOPTIONS93027782",
+    "HarvestHopeAPIweatherOPTIONS089BB800",
+    "HarvestHopeAPIweatherPOSTD9DBFF03",
+    "HarvestHopeAPIweather7C8D3007"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Deployment/Resource",
+    "aws:cdk:do-not-refactor": true
+   }
+  },
+  "HarvestHopeAPIDeploymentStageprod48707531": {
+   "Type": "AWS::ApiGateway::Stage",
+   "Properties": {
+    "DeploymentId": {
+     "Ref": "HarvestHopeAPIDeployment6629B5052eaff2a31049670d687b2442602fee50"
+    },
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    },
+    "StageName": "prod"
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/DeploymentStage.prod/Resource"
+   }
+  },
+  "HarvestHopeAPIOPTIONS93027782": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Fn::GetAtt": [
+      "HarvestHopeAPID5BC3561",
+      "RootResourceId"
+     ]
+    },
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/OPTIONS/Resource"
+   }
+  },
+  "HarvestHopeAPIweather7C8D3007": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Fn::GetAtt": [
+      "HarvestHopeAPID5BC3561",
+      "RootResourceId"
+     ]
+    },
+    "PathPart": "weather",
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/weather/Resource"
+   }
+  },
+  "HarvestHopeAPIweatherOPTIONS089BB800": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Ref": "HarvestHopeAPIweather7C8D3007"
+    },
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/weather/OPTIONS/Resource"
+   }
+  },
+  "HarvestHopeAPIweatherPOSTApiPermissionHarvestHopeStackHarvestHopeAPICFC1F6AEPOSTweatherF4862302": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "WeatherFunctionB4B1B979",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "HarvestHopeAPID5BC3561"
+       },
+       "/",
+       {
+        "Ref": "HarvestHopeAPIDeploymentStageprod48707531"
+       },
+       "/POST/weather"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/weather/POST/ApiPermission.HarvestHopeStackHarvestHopeAPICFC1F6AE.POST..weather"
+   }
+  },
+  "HarvestHopeAPIweatherPOSTApiPermissionTestHarvestHopeStackHarvestHopeAPICFC1F6AEPOSTweather691E6D84": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "WeatherFunctionB4B1B979",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "HarvestHopeAPID5BC3561"
+       },
+       "/test-invoke-stage/POST/weather"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/weather/POST/ApiPermission.Test.HarvestHopeStackHarvestHopeAPICFC1F6AE.POST..weather"
+   }
+  },
+  "HarvestHopeAPIweatherPOSTD9DBFF03": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "POST",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "WeatherFunctionB4B1B979",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "HarvestHopeAPIweather7C8D3007"
+    },
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/weather/POST/Resource"
+   }
+  },
+  "HarvestHopeAPImarket081FC8DD": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Fn::GetAtt": [
+      "HarvestHopeAPID5BC3561",
+      "RootResourceId"
+     ]
+    },
+    "PathPart": "market",
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/market/Resource"
+   }
+  },
+  "HarvestHopeAPImarketOPTIONS5756F56F": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Ref": "HarvestHopeAPImarket081FC8DD"
+    },
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/market/OPTIONS/Resource"
+   }
+  },
+  "HarvestHopeAPImarketPOSTApiPermissionHarvestHopeStackHarvestHopeAPICFC1F6AEPOSTmarketF88EF303": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "MarketFunctionA7C99C42",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "HarvestHopeAPID5BC3561"
+       },
+       "/",
+       {
+        "Ref": "HarvestHopeAPIDeploymentStageprod48707531"
+       },
+       "/POST/market"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/market/POST/ApiPermission.HarvestHopeStackHarvestHopeAPICFC1F6AE.POST..market"
+   }
+  },
+  "HarvestHopeAPImarketPOSTApiPermissionTestHarvestHopeStackHarvestHopeAPICFC1F6AEPOSTmarket876C52B0": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "MarketFunctionA7C99C42",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "HarvestHopeAPID5BC3561"
+       },
+       "/test-invoke-stage/POST/market"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/market/POST/ApiPermission.Test.HarvestHopeStackHarvestHopeAPICFC1F6AE.POST..market"
+   }
+  },
+  "HarvestHopeAPImarketPOST847EB9BA": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "POST",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "MarketFunctionA7C99C42",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "HarvestHopeAPImarket081FC8DD"
+    },
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/market/POST/Resource"
+   }
+  },
+  "HarvestHopeAPInpc22C970B3": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Fn::GetAtt": [
+      "HarvestHopeAPID5BC3561",
+      "RootResourceId"
+     ]
+    },
+    "PathPart": "npc",
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/npc/Resource"
+   }
+  },
+  "HarvestHopeAPInpcOPTIONS1355A8FB": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Ref": "HarvestHopeAPInpc22C970B3"
+    },
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/npc/OPTIONS/Resource"
+   }
+  },
+  "HarvestHopeAPInpcPOSTApiPermissionHarvestHopeStackHarvestHopeAPICFC1F6AEPOSTnpc5645D962": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "NPCFunctionA36487FF",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "HarvestHopeAPID5BC3561"
+       },
+       "/",
+       {
+        "Ref": "HarvestHopeAPIDeploymentStageprod48707531"
+       },
+       "/POST/npc"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/npc/POST/ApiPermission.HarvestHopeStackHarvestHopeAPICFC1F6AE.POST..npc"
+   }
+  },
+  "HarvestHopeAPInpcPOSTApiPermissionTestHarvestHopeStackHarvestHopeAPICFC1F6AEPOSTnpcF1CFD9D7": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "NPCFunctionA36487FF",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "HarvestHopeAPID5BC3561"
+       },
+       "/test-invoke-stage/POST/npc"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/npc/POST/ApiPermission.Test.HarvestHopeStackHarvestHopeAPICFC1F6AE.POST..npc"
+   }
+  },
+  "HarvestHopeAPInpcPOSTFCCD5E1E": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "POST",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "NPCFunctionA36487FF",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "HarvestHopeAPInpc22C970B3"
+    },
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/npc/POST/Resource"
+   }
+  },
+  "HarvestHopeAPIevents52101455": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Fn::GetAtt": [
+      "HarvestHopeAPID5BC3561",
+      "RootResourceId"
+     ]
+    },
+    "PathPart": "events",
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/events/Resource"
+   }
+  },
+  "HarvestHopeAPIeventsOPTIONS588BB01C": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Ref": "HarvestHopeAPIevents52101455"
+    },
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/events/OPTIONS/Resource"
+   }
+  },
+  "HarvestHopeAPIeventsPOSTApiPermissionHarvestHopeStackHarvestHopeAPICFC1F6AEPOSTeventsD3C8F579": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "EventFunction95C95973",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "HarvestHopeAPID5BC3561"
+       },
+       "/",
+       {
+        "Ref": "HarvestHopeAPIDeploymentStageprod48707531"
+       },
+       "/POST/events"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/events/POST/ApiPermission.HarvestHopeStackHarvestHopeAPICFC1F6AE.POST..events"
+   }
+  },
+  "HarvestHopeAPIeventsPOSTApiPermissionTestHarvestHopeStackHarvestHopeAPICFC1F6AEPOSTevents8171B49C": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "EventFunction95C95973",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "HarvestHopeAPID5BC3561"
+       },
+       "/test-invoke-stage/POST/events"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/events/POST/ApiPermission.Test.HarvestHopeStackHarvestHopeAPICFC1F6AE.POST..events"
+   }
+  },
+  "HarvestHopeAPIeventsPOST7DE34261": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "POST",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "EventFunction95C95973",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "HarvestHopeAPIevents52101455"
+    },
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/events/POST/Resource"
+   }
+  },
+  "HarvestHopeAPIgamestate8E092E03": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Fn::GetAtt": [
+      "HarvestHopeAPID5BC3561",
+      "RootResourceId"
+     ]
+    },
+    "PathPart": "gamestate",
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/gamestate/Resource"
+   }
+  },
+  "HarvestHopeAPIgamestateOPTIONS9894D733": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Ref": "HarvestHopeAPIgamestate8E092E03"
+    },
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/gamestate/OPTIONS/Resource"
+   }
+  },
+  "HarvestHopeAPIgamestateplayerId83629BAA": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Ref": "HarvestHopeAPIgamestate8E092E03"
+    },
+    "PathPart": "{playerId}",
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/gamestate/{playerId}/Resource"
+   }
+  },
+  "HarvestHopeAPIgamestateplayerIdOPTIONS2AADFEEF": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Ref": "HarvestHopeAPIgamestateplayerId83629BAA"
+    },
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/gamestate/{playerId}/OPTIONS/Resource"
+   }
+  },
+  "HarvestHopeAPIgamestateplayerIdGETApiPermissionHarvestHopeStackHarvestHopeAPICFC1F6AEGETgamestateplayerId1F6793F4": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "GameStateFunctionE5C43106",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "HarvestHopeAPID5BC3561"
+       },
+       "/",
+       {
+        "Ref": "HarvestHopeAPIDeploymentStageprod48707531"
+       },
+       "/GET/gamestate/*"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/gamestate/{playerId}/GET/ApiPermission.HarvestHopeStackHarvestHopeAPICFC1F6AE.GET..gamestate.{playerId}"
+   }
+  },
+  "HarvestHopeAPIgamestateplayerIdGETApiPermissionTestHarvestHopeStackHarvestHopeAPICFC1F6AEGETgamestateplayerIdE9564A2D": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "GameStateFunctionE5C43106",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "HarvestHopeAPID5BC3561"
+       },
+       "/test-invoke-stage/GET/gamestate/*"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/gamestate/{playerId}/GET/ApiPermission.Test.HarvestHopeStackHarvestHopeAPICFC1F6AE.GET..gamestate.{playerId}"
+   }
+  },
+  "HarvestHopeAPIgamestateplayerIdGET70790E7B": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "GET",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "GameStateFunctionE5C43106",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "HarvestHopeAPIgamestateplayerId83629BAA"
+    },
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/gamestate/{playerId}/GET/Resource"
+   }
+  },
+  "HarvestHopeAPIgamestateplayerIdPOSTApiPermissionHarvestHopeStackHarvestHopeAPICFC1F6AEPOSTgamestateplayerId67960660": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "GameStateFunctionE5C43106",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "HarvestHopeAPID5BC3561"
+       },
+       "/",
+       {
+        "Ref": "HarvestHopeAPIDeploymentStageprod48707531"
+       },
+       "/POST/gamestate/*"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/gamestate/{playerId}/POST/ApiPermission.HarvestHopeStackHarvestHopeAPICFC1F6AE.POST..gamestate.{playerId}"
+   }
+  },
+  "HarvestHopeAPIgamestateplayerIdPOSTApiPermissionTestHarvestHopeStackHarvestHopeAPICFC1F6AEPOSTgamestateplayerIdA760FB92": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "GameStateFunctionE5C43106",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "HarvestHopeAPID5BC3561"
+       },
+       "/test-invoke-stage/POST/gamestate/*"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/gamestate/{playerId}/POST/ApiPermission.Test.HarvestHopeStackHarvestHopeAPICFC1F6AE.POST..gamestate.{playerId}"
+   }
+  },
+  "HarvestHopeAPIgamestateplayerIdPOST048EDA43": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "POST",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "GameStateFunctionE5C43106",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "HarvestHopeAPIgamestateplayerId83629BAA"
+    },
+    "RestApiId": {
+     "Ref": "HarvestHopeAPID5BC3561"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/HarvestHopeAPI/Default/gamestate/{playerId}/POST/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/1WOzU7DMBCEn6V3Z0Ep4k5B3CqqlDva2EvZxj9RbBNFlt8dxQ6inOabGWl2W2j3LbQ7nH0j1dBo7iGdA8pB4Ow/klosGqd6SO/YaxLPn7ZAFn4P6RDlQGENN6pycprl8hdXnwWjgdS5OrNqFhpNrxDSa7QysLNrc8snmgx7z85mgSNfMNCMC6SOfHgauQxt+EKjdoshWx66ceeAl3KyQkfexUnSAT2JI4Uvp9Zyo992Wy6c87/4LYYxhiysUwRXf/fdPsAj3O+unrmZog1sCLqqPx2JuzRgAQAA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "HarvestHopeStack/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "HarvestHopeAPIEndpointC10B290D": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Ref": "HarvestHopeAPID5BC3561"
+      },
+      ".execute-api.us-east-1.",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/",
+      {
+       "Ref": "HarvestHopeAPIDeploymentStageprod48707531"
+      },
+      "/"
+     ]
+    ]
+   }
+  },
+  "APIGatewayURL": {
+   "Description": "API Gateway URL",
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Ref": "HarvestHopeAPID5BC3561"
+      },
+      ".execute-api.us-east-1.",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/",
+      {
+       "Ref": "HarvestHopeAPIDeploymentStageprod48707531"
+      },
+      "/"
+     ]
+    ]
+   }
+  },
+  "AssetsBucketName": {
+   "Description": "S3 Assets Bucket Name",
+   "Value": {
+    "Ref": "AssetsBucket5CB76180"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}
