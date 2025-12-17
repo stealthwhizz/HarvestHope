@@ -14,19 +14,63 @@ interface CropTile {
   quantity: number;
 }
 
+// Game save interface
+interface GameSave {
+  money: number;
+  day: number;
+  season: string;
+  selectedCrop: string;
+  plantedCrops: CropTile[];
+  harvestedCrops: {type: string, quantity: number}[];
+  appliedSchemes: string[];
+  lastSaved: number;
+}
+
+// Load game state from localStorage
+const loadGameState = (): GameSave | null => {
+  try {
+    const saved = localStorage.getItem('harvestHopeSave');
+    if (!saved) return null;
+    
+    const gameState = JSON.parse(saved);
+    console.log('🎮 Game loaded from localStorage:', gameState);
+    return gameState;
+  } catch (error) {
+    console.error('❌ Error loading game save:', error);
+    return null;
+  }
+};
+
+// Save game state to localStorage
+const saveGameState = (gameState: GameSave) => {
+  try {
+    gameState.lastSaved = Date.now();
+    localStorage.setItem('harvestHopeSave', JSON.stringify(gameState));
+    console.log('💾 Game auto-saved:', gameState);
+  } catch (error) {
+    console.error('❌ Error saving game:', error);
+  }
+};
+
 const SimpleGameUI: React.FC = () => {
-  const [money, setMoney] = useState(100000);
-  const [day, setDay] = useState(1);
-  const [season, setSeason] = useState('Kharif');
-  const [selectedCrop, setSelectedCrop] = useState('rice');
-  const [plantedCrops, setPlantedCrops] = useState<CropTile[]>([]);
-  const [harvestedCrops, setHarvestedCrops] = useState<{type: string, quantity: number}[]>([]);
+  // Load saved state or use defaults
+  const savedState = loadGameState();
+  
+  const [money, setMoney] = useState(savedState?.money ?? 100000);
+  const [day, setDay] = useState(savedState?.day ?? 1);
+  const [season, setSeason] = useState(savedState?.season ?? 'Kharif');
+  const [selectedCrop, setSelectedCrop] = useState(savedState?.selectedCrop ?? 'rice');
+  const [plantedCrops, setPlantedCrops] = useState<CropTile[]>(savedState?.plantedCrops ?? []);
+  const [harvestedCrops, setHarvestedCrops] = useState<{type: string, quantity: number}[]>(savedState?.harvestedCrops ?? []);
+  const [appliedSchemes, setAppliedSchemes] = useState<string[]>(savedState?.appliedSchemes ?? []);
+  
+  // Non-persistent UI state
   const [notifications, setNotifications] = useState<string[]>([]);
   const [showWeatherModal, setShowWeatherModal] = useState(false);
   const [showSchemesModal, setShowSchemesModal] = useState(false);
-  const [appliedSchemes, setAppliedSchemes] = useState<string[]>([]);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [aiWeatherData, setAiWeatherData] = useState<any>(null);
+  const [showSaveIndicator, setShowSaveIndicator] = useState(false);
 
   const seasons = ['Kharif', 'Rabi', 'Zaid', 'Off-season'];
   
@@ -84,6 +128,39 @@ const SimpleGameUI: React.FC = () => {
       return newCrops;
     });
   }, [day]);
+
+  // Auto-save game state whenever it changes
+  useEffect(() => {
+    const gameState: GameSave = {
+      money,
+      day,
+      season,
+      selectedCrop,
+      plantedCrops,
+      harvestedCrops,
+      appliedSchemes,
+      lastSaved: Date.now()
+    };
+    
+    // Save to localStorage
+    saveGameState(gameState);
+    
+    // Show save indicator
+    setShowSaveIndicator(true);
+    const timer = setTimeout(() => setShowSaveIndicator(false), 2000);
+    
+    return () => clearTimeout(timer);
+  }, [money, day, season, selectedCrop, plantedCrops, harvestedCrops, appliedSchemes]);
+
+  // Show welcome back message if game was loaded
+  useEffect(() => {
+    if (savedState) {
+      setNotifications(prev => [...prev, `🎮 Welcome back! Game loaded from Day ${savedState.day}`]);
+      setTimeout(() => {
+        setNotifications(prev => prev.slice(1));
+      }, 4000);
+    }
+  }, []); // Only run once on mount
   
   const handleAdvanceDay = () => {
     const newDay = day + 1;
@@ -99,6 +176,64 @@ const SimpleGameUI: React.FC = () => {
 
   const handleAddMoney = () => {
     setMoney(money + 10000);
+  };
+
+  const handleNewGame = () => {
+    if (confirm('🔄 Start a new game? All current progress will be lost!')) {
+      // Clear localStorage
+      localStorage.removeItem('harvestHopeSave');
+      
+      // Reset all state to defaults
+      setMoney(100000);
+      setDay(1);
+      setSeason('Kharif');
+      setSelectedCrop('rice');
+      setPlantedCrops([]);
+      setHarvestedCrops([]);
+      setAppliedSchemes([]);
+      
+      // Show confirmation
+      setNotifications(prev => [...prev, '🎮 New game started! Good luck, farmer!']);
+      setTimeout(() => {
+        setNotifications(prev => prev.slice(1));
+      }, 3000);
+    }
+  };
+
+  const handleExportSave = () => {
+    try {
+      const saveData = localStorage.getItem('harvestHopeSave');
+      if (!saveData) {
+        setNotifications(prev => [...prev, '❌ No save data found to export!']);
+        setTimeout(() => {
+          setNotifications(prev => prev.slice(1));
+        }, 3000);
+        return;
+      }
+
+      // Create downloadable file
+      const blob = new Blob([saveData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `harvest-hope-save-day${day}-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      // Show confirmation
+      setNotifications(prev => [...prev, '💾 Save file exported successfully!']);
+      setTimeout(() => {
+        setNotifications(prev => prev.slice(1));
+      }, 3000);
+    } catch (error) {
+      console.error('Export error:', error);
+      setNotifications(prev => [...prev, '❌ Failed to export save file!']);
+      setTimeout(() => {
+        setNotifications(prev => prev.slice(1));
+      }, 3000);
+    }
   };
 
   const handleTileClick = (tileIndex: number) => {
@@ -660,6 +795,13 @@ const SimpleGameUI: React.FC = () => {
               Clear 28°C
             </span>
           </div>
+
+          {/* Save Indicator */}
+          <div className="hud-item">
+            <span className={`save-indicator ${showSaveIndicator ? 'show' : ''}`}>
+              💾 Auto-saved
+            </span>
+          </div>
         </div>
       </div>
 
@@ -791,6 +933,20 @@ const SimpleGameUI: React.FC = () => {
                 className="retro-button action-button"
               >
                 💰 ADD MONEY
+              </button>
+
+              <button
+                onClick={handleNewGame}
+                className="retro-button retro-button-red action-button"
+              >
+                🔄 NEW GAME
+              </button>
+
+              <button
+                onClick={handleExportSave}
+                className="retro-button action-button"
+              >
+                📁 EXPORT SAVE
               </button>
 
               <div className="planting-cost retro-panel-inset" style={{marginTop: '10px', padding: '6px'}}>
