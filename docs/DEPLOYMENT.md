@@ -1,334 +1,177 @@
 # Harvest Hope Deployment Guide
 
-This guide covers the complete deployment process for Harvest Hope: The Last Farm, including infrastructure setup, frontend deployment, and monitoring configuration.
+This guide covers the complete deployment process for Harvest Hope: The Last Farm using GitHub Pages.
 
 ## Prerequisites
 
 Before deploying, ensure you have:
 
-- AWS CLI configured with appropriate permissions
 - Node.js 18+ installed
-- AWS CDK CLI installed (`npm install -g aws-cdk`)
-- Git repository set up (for Amplify deployment)
+- Git repository set up on GitHub
+- GitHub account with repository access
 
 ## Architecture Overview
 
 The deployment consists of:
 
-- **Frontend**: React app deployed via AWS Amplify
-- **Backend**: Serverless Lambda functions with API Gateway
-- **Database**: DynamoDB tables with proper indexing
-- **Storage**: S3 buckets for assets and data
-- **Monitoring**: CloudWatch dashboards and alarms
-- **CDN**: CloudFront for asset delivery
+- **Frontend**: React app deployed via GitHub Pages
+- **Build System**: GitHub Actions for automated deployment
+- **CDN**: GitHub's global CDN infrastructure
 
 ## Quick Deployment
 
-### Option 1: Automated Script (Recommended)
+### Automated GitHub Pages Deployment
 
 ```bash
-# Linux/macOS
-./deploy.sh
+# Commit and push your changes
+git add .
+git commit -m "ready for deployment"
+git push origin main
 
-# Windows PowerShell
-.\deploy.ps1
+# The GitHub Actions workflow will automatically deploy
 ```
-
-### Option 2: Manual Deployment
-
-Follow the step-by-step process below for more control.
 
 ## Step-by-Step Deployment
 
-### 1. Infrastructure Deployment
+### 1. Enable GitHub Pages
+
+1. **Go to Repository Settings**:
+   - Navigate to your GitHub repository
+   - Click on "Settings" tab
+   - Scroll down to "Pages" section
+
+2. **Configure Source**:
+   - Set Source to "GitHub Actions"
+   - Save the configuration
+
+### 2. Add Environment Variables
+
+1. **Repository Secrets**:
+   - Go to Settings → Secrets and variables → Actions
+   - Add repository secret: `VITE_GEMINI_API_KEY`
+   - Set value to your actual Gemini API key
+
+### 3. Trigger Deployment
 
 ```bash
-# Navigate to infrastructure directory
-cd infrastructure
+# Make sure all changes are committed
+git add .
+git commit -m "deploy to GitHub Pages"
+git push origin main
 
-# Install dependencies
-npm install
-
-# Bootstrap CDK (first time only)
-cdk bootstrap
-
-# Deploy infrastructure
-cdk deploy --require-approval never
+# GitHub Actions will automatically build and deploy
 ```
 
-### 2. Frontend Configuration
+### 4. Access Your Site
 
-After infrastructure deployment, update frontend environment variables:
-
-```bash
-# Get API Gateway URL from CDK outputs
-API_URL=$(aws cloudformation describe-stacks --stack-name HarvestHopeStack --query "Stacks[0].Outputs[?OutputKey=='APIGatewayURL'].OutputValue" --output text)
-
-# Update frontend/.env.production
-cd frontend
-cat > .env.production << EOF
-VITE_API_BASE_URL=$API_URL
-VITE_ASSETS_BASE_URL=https://your-cloudfront-domain.cloudfront.net
-VITE_AWS_REGION=us-east-1
-VITE_NODE_ENV=production
-VITE_ENABLE_ANALYTICS=true
-VITE_ENABLE_ERROR_REPORTING=true
-VITE_ENABLE_PERFORMANCE_MONITORING=true
-VITE_GAME_VERSION=1.0.0
-VITE_MAX_SAVE_SLOTS=5
-VITE_AUTO_SAVE_INTERVAL=30000
-EOF
+Your site will be available at:
+```
+https://yourusername.github.io/HarvestHope/
 ```
 
-### 3. AWS Amplify Setup
+## Deployment Features
 
-1. **Connect Repository**:
-   - Go to [AWS Amplify Console](https://console.aws.amazon.com/amplify/)
-   - Click "New app" → "Host web app"
-   - Connect your GitHub repository
+### GitHub Actions Workflow
 
-2. **Configure Build Settings**:
-   - Use the provided `amplify.yml` build specification
-   - Set app root to `frontend`
+The `.github/workflows/deploy-github-pages.yml` file automatically:
+- Installs dependencies
+- Builds the production bundle
+- Deploys to GitHub Pages
+- Runs on every push to main branch
 
-3. **Environment Variables**:
-   Set these in Amplify Console → App Settings → Environment Variables:
-   ```
-   VITE_API_BASE_URL=<your-api-gateway-url>
-   VITE_ASSETS_BASE_URL=<your-cloudfront-url>
-   VITE_AWS_REGION=<your-aws-region>
-   VITE_NODE_ENV=production
-   ```
+### Build Optimization
 
-4. **Deploy**:
-   - Save and deploy
-   - Amplify will automatically build and deploy on code changes
+The production build includes:
+- **Code splitting**: Vendor and AI chunks separated
+- **Asset optimization**: Images, CSS, JS minified
+- **Caching**: Optimized file naming for browser caching
+- **Bundle size**: ~84KB gzipped total
 
-### 4. Upload Game Assets
+### Performance Features
 
-```bash
-# Upload sprites, audio, and other assets
-aws s3 sync assets/ s3://your-assets-bucket/assets/ --delete
+- GitHub's global CDN for fast delivery
+- Automatic HTTPS/SSL
+- Optimized asset caching
+- Mobile responsive design
 
-# Upload game data (IMD weather data, MSP rates, etc.)
-aws s3 sync data/ s3://harvest-hope-data/data/ --delete
-```
+## Cost
 
-## Infrastructure Components
-
-### DynamoDB Tables
-
-| Table Name | Purpose | Indexes |
-|------------|---------|---------|
-| `harvest-hope-game-states` | Player save data | LastModifiedIndex |
-| `harvest-hope-npc-templates` | NPC character templates | CrisisTypeIndex |
-| `harvest-hope-market-data` | Crop price history | RegionDateIndex |
-| `harvest-hope-player-stats` | Player statistics | ScoreIndex |
-| `harvest-hope-loans` | Loan tracking | StatusIndex |
-| `harvest-hope-government-schemes` | Scheme information | CategoryIndex |
-| `harvest-hope-transactions` | Financial transactions | DateIndex |
-
-### Lambda Functions
-
-| Function | Purpose | Memory | Timeout | Concurrency |
-|----------|---------|--------|---------|-------------|
-| `harvest-hope-weather` | Weather predictions | 512MB | 30s | 10 |
-| `harvest-hope-market` | Market simulation | 512MB | 30s | 10 |
-| `harvest-hope-npc` | NPC generation | 1024MB | 60s | 5 |
-| `harvest-hope-event` | Event generation | 1024MB | 60s | 5 |
-| `harvest-hope-gamestate` | Save/load operations | 512MB | 30s | 20 |
-| `harvest-hope-financial` | Financial calculations | 512MB | 30s | 15 |
-
-### API Endpoints
-
-- `POST /weather` - Generate weather predictions
-- `POST /market` - Simulate crop prices
-- `POST /npc` - Generate NPC characters
-- `POST /events/generate` - Create random events
-- `POST /events/resolve` - Resolve event outcomes
-- `GET/POST/DELETE /gamestate/{playerId}` - Game state operations
-- `POST /financial` - Financial calculations
-
-## Monitoring and Logging
-
-### CloudWatch Dashboard
-
-Access the performance dashboard at:
-```
-https://console.aws.amazon.com/cloudwatch/home?region=<region>#dashboards:name=HarvestHope-Performance
-```
-
-### Key Metrics
-
-- **Lambda Performance**: Duration, errors, invocations
-- **API Gateway**: Request count, latency, error rates
-- **DynamoDB**: Consumed capacity, throttling
-- **Player Activity**: Active players, API requests
-
-### Alarms
-
-Configured alarms for:
-- Lambda function errors (threshold: 5 errors in 2 periods)
-- API Gateway latency (threshold: 5 seconds)
-- API Gateway 4xx/5xx errors
-- DynamoDB throttling
-
-### Log Groups
-
-All Lambda functions log to CloudWatch with 1-month retention:
-- `/aws/lambda/harvest-hope-weather`
-- `/aws/lambda/harvest-hope-market`
-- `/aws/lambda/harvest-hope-npc`
-- `/aws/lambda/harvest-hope-event`
-- `/aws/lambda/harvest-hope-gamestate`
-- `/aws/lambda/harvest-hope-financial`
-
-## Security Configuration
-
-### IAM Permissions
-
-Lambda functions have minimal required permissions:
-- DynamoDB: Read/write access to specific tables and indexes
-- S3: Read/write access to game data and assets
-- Bedrock: Invoke specific AI models
-- CloudWatch: Create logs and metrics
-
-### Data Encryption
-
-- DynamoDB tables use AWS-managed encryption
-- S3 buckets use server-side encryption
-- API Gateway uses HTTPS only
-- Lambda functions support X-Ray tracing
-
-### CORS Configuration
-
-API Gateway configured for cross-origin requests from Amplify domain.
-
-## Performance Optimizations
-
-### Lambda Optimizations
-
-- Reserved concurrency to prevent cold starts
-- Lambda Insights enabled for performance monitoring
-- X-Ray tracing for request analysis
-- Shared layer for common dependencies
-
-### DynamoDB Optimizations
-
-- Pay-per-request billing for cost efficiency
-- Global Secondary Indexes for query patterns
-- TTL configured for temporary data
-- Point-in-time recovery enabled
-
-### Frontend Optimizations
-
-- CloudFront CDN for asset delivery
-- Vite build optimization
-- Asset preloading and caching
-- Performance monitoring enabled
-
-## Cost Optimization
-
-### Expected Costs (Monthly)
-
-- **Lambda**: $10-50 (based on usage)
-- **DynamoDB**: $5-25 (pay-per-request)
-- **API Gateway**: $3-15 (per million requests)
-- **S3**: $1-5 (storage and transfer)
-- **CloudFront**: $1-10 (CDN usage)
-- **Amplify**: $1-5 (build minutes and hosting)
-
-**Total Estimated**: $20-110/month for moderate usage
-
-### Cost Reduction Tips
-
-1. Use DynamoDB on-demand pricing for variable workloads
-2. Enable S3 Intelligent Tiering for assets
-3. Set up CloudWatch billing alarms
-4. Use Lambda provisioned concurrency only if needed
-5. Optimize Lambda memory allocation based on performance metrics
+**GitHub Pages is completely FREE** including:
+- Unlimited bandwidth (100GB/month soft limit)
+- Free SSL certificate
+- Global CDN
+- Automatic deployments
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **CDK Bootstrap Errors**:
-   ```bash
-   cdk bootstrap --force
-   ```
+1. **Build Failures**:
+   - Check GitHub Actions logs in the "Actions" tab
+   - Verify environment variables are set correctly
+   - Ensure Node.js version compatibility
 
-2. **Lambda Timeout Issues**:
-   - Check CloudWatch logs
-   - Increase timeout in CDK stack
-   - Optimize function code
+2. **API Key Issues**:
+   - Verify `VITE_GEMINI_API_KEY` secret is set in repository
+   - Check that the API key is valid and active
+   - Game works without API key (has fallbacks)
 
-3. **DynamoDB Throttling**:
-   - Check consumed capacity metrics
-   - Optimize query patterns
-   - Consider provisioned capacity
-
-4. **Amplify Build Failures**:
-   - Check build logs in Amplify console
-   - Verify environment variables
-   - Check Node.js version compatibility
+3. **404 Errors on Page Refresh**:
+   - GitHub Pages automatically handles SPA routing
+   - Ensure `base` path in vite.config.ts matches repository name
 
 ### Debugging Commands
 
 ```bash
-# Check CDK stack status
-cdk list
-cdk diff
+# Test build locally
+cd frontend
+npm run build
+npm run preview
 
-# View CloudFormation events
-aws cloudformation describe-stack-events --stack-name HarvestHopeStack
+# Check GitHub Actions logs
+# Go to repository → Actions tab → View latest workflow run
 
-# Check Lambda function logs
-aws logs tail /aws/lambda/harvest-hope-gamestate --follow
-
-# Test API endpoints
-curl -X POST https://your-api-url/weather -d '{"region":"maharashtra"}'
+# Test deployed site
+curl -I https://yourusername.github.io/HarvestHope/
 ```
 
 ## Rollback Procedures
 
-### Infrastructure Rollback
+### Rollback to Previous Version
+
+In GitHub:
+1. Go to repository → Actions tab
+2. Find a previous successful deployment
+3. Click "Re-run jobs" to redeploy that version
+
+### Manual Rollback
 
 ```bash
-# Rollback CDK deployment
-cdk deploy --rollback
+# Revert to previous commit
+git revert HEAD
+git push origin main
 
-# Or destroy and redeploy
-cdk destroy
-cdk deploy
+# GitHub Actions will automatically redeploy the reverted version
 ```
-
-### Frontend Rollback
-
-In Amplify Console:
-1. Go to App → Hosting → Build history
-2. Select previous successful build
-3. Click "Redeploy this version"
 
 ## Maintenance
 
 ### Regular Tasks
 
-1. **Weekly**: Review CloudWatch metrics and alarms
-2. **Monthly**: Check cost reports and optimize resources
-3. **Quarterly**: Update dependencies and security patches
-4. **Annually**: Review and update disaster recovery procedures
+1. **Weekly**: Monitor GitHub Actions for failed builds
+2. **Monthly**: Update dependencies and security patches
+3. **Quarterly**: Review and optimize bundle size
 
 ### Updates
 
-1. **Code Updates**: Push to GitHub (auto-deploys via Amplify)
-2. **Infrastructure Updates**: Modify CDK stack and redeploy
-3. **Dependency Updates**: Update package.json and redeploy
+1. **Code Updates**: Push to GitHub (auto-deploys via GitHub Actions)
+2. **Dependency Updates**: Update package.json and push to trigger rebuild
+3. **Configuration Updates**: Modify vite.config.ts or workflow files as needed
 
 ## Support and Resources
 
-- **AWS Documentation**: [AWS CDK Guide](https://docs.aws.amazon.com/cdk/)
-- **Amplify Documentation**: [AWS Amplify Guide](https://docs.amplify.aws/)
-- **CloudWatch Monitoring**: [CloudWatch User Guide](https://docs.aws.amazon.com/cloudwatch/)
-- **Cost Management**: [AWS Cost Management](https://aws.amazon.com/aws-cost-management/)
+- **GitHub Pages Documentation**: [GitHub Pages Guide](https://docs.github.com/en/pages)
+- **GitHub Actions Documentation**: [GitHub Actions Guide](https://docs.github.com/en/actions)
+- **Vite Documentation**: [Vite Build Guide](https://vitejs.dev/guide/build.html)
 
-For issues or questions, check the CloudWatch logs and metrics first, then consult the AWS documentation for specific services.
+For issues or questions, check the GitHub Actions logs first, then consult the GitHub Pages documentation.

@@ -10,7 +10,7 @@
 
 Harvest Hope is an immersive farming simulation that combines engaging gameplay with real-world agricultural education. Players experience the complexities of Indian farming while learning about crop cycles, financial management, and government support systems.
 
-This project demonstrates advanced AI integration, modern web development practices, and educational gaming concepts - perfect for the AWS-sponsored Kiro weekly challenge.
+This project demonstrates advanced AI integration, modern web development practices, and educational gaming concepts - perfect for the Kiro weekly challenge.
 
 ## ✨ Key Features
 
@@ -117,11 +117,11 @@ npm run dev
 - **🛡️ Graceful Fallbacks** - Intelligent simulation when AI unavailable
 - **📊 Rate Limit Management** - Stays within free tier limits (1,500 requests/day)
 
-### Backend Services (AWS)
-- **⚡ Lambda Functions** - Serverless weather and market analysis
-- **🌐 API Gateway** - RESTful endpoints for external data integration
-- **🏗️ CloudFormation** - Infrastructure as code for easy deployment
-- **📦 S3** - Static asset hosting and distribution
+### Deployment Ready
+- **🌐 GitHub Pages** - Free static hosting with automatic deployments
+- **⚡ GitHub Actions** - Automated build and deployment pipeline
+- **🏗️ Production Optimized** - Code splitting and asset optimization
+- **📦 CDN Delivery** - Global content delivery through GitHub's infrastructure
 
 ## 📊 Game Features Deep Dive
 
@@ -167,10 +167,10 @@ npm run dev
 - **🛡️ Error Handling**: Comprehensive error recovery and graceful fallbacks
 
 ### 📊 Scalability Features
-- **☁️ Serverless Backend**: Auto-scaling AWS Lambda functions handle traffic spikes
-- **🌐 CDN Distribution**: Global asset delivery through content delivery networks
-- **💻 Client-Side Logic**: Reduces server load by processing game logic locally
-- **🔄 Stateless Design**: No server-side session management for better scalability
+- **🌐 Static Hosting**: GitHub Pages provides reliable, scalable hosting
+- **🚀 CDN Distribution**: Global asset delivery through GitHub's infrastructure
+- **💻 Client-Side Logic**: All game logic runs in browser for better performance
+- **🔄 Stateless Design**: No server dependencies for maximum reliability
 
 ## 🧪 Testing & Quality Assurance
 
@@ -220,10 +220,9 @@ npm run build:dev
 ## 🚀 Deployment Options
 
 ### ☁️ Supported Platforms
-- **🏆 AWS Amplify** (recommended) - Full-stack deployment with `amplify.yml`
+- **🏆 GitHub Pages** (recommended) - Free static hosting with automatic deployments
 - **⚡ Vercel** - Zero-configuration deployment with automatic optimizations
 - **🌐 Netlify** - Drag-and-drop deployment with form handling
-- **📄 GitHub Pages** - Free static hosting for open source projects
 
 ### 📦 Production Build Process
 ```bash
@@ -338,15 +337,14 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - **🤖 Google Gemini AI** - Powering intelligent game features and predictions
 - **👨‍🌾 Indian Farmers** - Inspiration for authentic agricultural scenarios and challenges
 - **🌐 Open Source Community** - Amazing tools, libraries, and frameworks
-- **🏆 Kiro & AWS** - Platform opportunity and challenge hosting
+- **🏆 Kiro** - Platform opportunity and challenge hosting
 - **⚛️ React Team** - Excellent framework and development experience
 - **⚡ Vite Team** - Lightning-fast build tool and development server
 
 ### 🛠️ Technology Stack Credits
 - **Frontend**: React, TypeScript, Vite, CSS3
 - **AI**: Google Generative AI SDK, Gemini 2.5 Flash
-- **Backend**: AWS Lambda, API Gateway, CloudFormation
-- **Deployment**: AWS Amplify, Vercel, Netlify
+- **Deployment**: GitHub Pages, Vercel, Netlify
 - **Development**: ESLint, Prettier, VS Code
 
 ## 📞 Support & Contact

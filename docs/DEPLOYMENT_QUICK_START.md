@@ -13,9 +13,7 @@ Deploy your Harvest Hope game to production in minutes with these automated depl
 - **SSL**: Automatic
 - **CDN**: GitHub's global CDN
 
-### ☁️ **AWS S3 + CloudFront** (Recommended for production)
-- **Cost**: ~$5-20/month
-- **Setup Time**: 10 minutes
+
 - **Custom Domain**: Full control
 - **SSL**: AWS Certificate Manager
 - **CDN**: Global CloudFront network
@@ -67,44 +65,7 @@ chmod +x deploy-github-pages.sh
 - 🔗 **URL**: `https://yourusername.github.io/harvest-hope`
 - 📊 **Monitor**: Check "Actions" tab for progress
 
-## ☁️ Method 2: AWS S3 + CloudFront
 
-### Step 1: Install AWS CLI
-
-```powershell
-# Windows (Chocolatey)
-choco install awscli
-
-# Or download from: https://aws.amazon.com/cli/
-```
-
-### Step 2: Configure AWS
-
-```bash
-aws configure
-# Enter your AWS Access Key ID
-# Enter your AWS Secret Access Key
-# Default region: us-east-1
-# Default output format: json
-```
-
-### Step 3: Deploy with Script
-
-```powershell
-# Create bucket and deploy
-.\deploy-aws-s3.ps1 -CreateBucket
-
-# Or deploy to existing bucket
-.\deploy-aws-s3.ps1 -BucketName your-bucket-name
-
-# With CloudFront invalidation
-.\deploy-aws-s3.ps1 -BucketName your-bucket-name -DistributionId E1234567890ABC
-```
-
-### Step 4: Access Your Site
-
-- 🔗 **S3 URL**: `http://your-bucket-name.s3-website-us-east-1.amazonaws.com`
-- 🌐 **CloudFront URL**: `https://d1234567890abc.cloudfront.net`
 
 ## 🔧 Environment Configuration
 
@@ -128,9 +89,7 @@ VITE_API_BASE_URL=https://api.yourdomain.com
 2. **Add these secrets**:
    ```
    VITE_GEMINI_API_KEY=your-actual-api-key
-   AWS_ACCESS_KEY_ID=your-aws-key (for AWS deployment)
-   AWS_SECRET_ACCESS_KEY=your-aws-secret (for AWS deployment)
-   CLOUDFRONT_DISTRIBUTION_ID=E1234567890ABC (optional)
+
    ```
 
 ## ✅ Verification Checklist
@@ -185,7 +144,6 @@ npm run type-check
 #### 3. **404 Errors on Page Refresh**
 ```bash
 # GitHub Pages: Automatic SPA routing
-# AWS S3: Configure custom error pages
 ```
 
 #### 4. **Slow Loading**
@@ -204,7 +162,6 @@ npm run preview
 
 # Check deployment logs
 # GitHub: Actions tab
-# AWS: CloudWatch logs
 
 # Verify environment variables
 echo $VITE_GEMINI_API_KEY
@@ -236,12 +193,7 @@ The deployment scripts automatically:
 - **Custom Domain**: Free
 - **SSL**: Free
 
-### AWS S3 + CloudFront
-- **S3 Storage**: $0.023/GB/month
-- **S3 Requests**: $0.0004/1000 requests
-- **CloudFront**: $0.085/GB transfer
-- **Route 53**: $0.50/month (if custom domain)
-- **Total**: ~$5-20/month for typical usage
+
 
 ## 🎯 Recommended Workflow
 
@@ -251,9 +203,9 @@ The deployment scripts automatically:
 3. **Perfect for demos** and testing
 
 ### For Production
-1. **Use AWS S3 + CloudFront** for better performance
+1. **Use GitHub Pages** with custom domain for professional setup
 2. **Custom domain** with your branding
-3. **Global CDN** for worldwide users
+3. **Global CDN** through GitHub's infrastructure
 4. **Professional setup** for business use
 
 ## 🔗 Next Steps
@@ -262,7 +214,7 @@ The deployment scripts automatically:
 
 1. **🌐 Custom Domain** (optional)
    - GitHub Pages: Add CNAME file
-   - AWS: Configure Route 53
+   - GitHub Pages: Configure DNS settings
 
 2. **📊 Analytics** (optional)
    - Add Google Analytics
@@ -279,7 +231,7 @@ The deployment scripts automatically:
 ## 📚 Detailed Guides
 
 - **[GitHub Pages Deployment](DEPLOYMENT_GITHUB_PAGES.md)** - Complete GitHub Pages guide
-- **[AWS S3 Deployment](DEPLOYMENT_AWS_S3.md)** - Complete AWS deployment guide
+
 - **[Custom Domain Setup](DEPLOYMENT_CUSTOM_DOMAIN.md)** - Domain configuration
 - **[Performance Optimization](PERFORMANCE_OPTIMIZATIONS.md)** - Speed optimization
 

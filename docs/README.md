@@ -119,7 +119,7 @@ AI troubleshooting and improvements:
 - **📘 TypeScript Docs**: https://www.typescriptlang.org/docs/
 
 ### 🏆 Project Context
-- **🎯 Kiro Challenge**: Built for AWS-sponsored Kiro weekly challenge
+- **🎯 Kiro Challenge**: Built for Kiro weekly challenge
 - **🌾 Agricultural Focus**: Educational farming simulation
 - **🤖 AI Integration**: Advanced Gemini AI usage
 - **🎮 Gaming Innovation**: Unique blend of education and entertainment

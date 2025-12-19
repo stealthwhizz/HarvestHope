@@ -12,15 +12,15 @@ harvest-hope/
 │   │   └── utils/         # Utility functions
 │   ├── jest.config.cjs    # Jest testing configuration
 │   └── package.json       # Frontend dependencies
-├── backend/           # AWS Lambda functions (Python)
+├── backend/           # Backend services (for future expansion)
 │   ├── weather/       # Weather prediction service
 │   ├── market/        # Market simulation service
 │   ├── npc/           # NPC generation service
 │   ├── events/        # Event generation service
 │   └── gamestate/     # Game state management service
-├── infrastructure/    # AWS CDK infrastructure code
-│   ├── lib/           # CDK stack definitions
-│   ├── bin/           # CDK app entry point
+├── infrastructure/    # Infrastructure code (for future expansion)
+│   ├── lib/           # Infrastructure definitions
+│   ├── bin/           # Infrastructure entry point
 │   └── cdk.json       # CDK configuration
 ├── shared/           # Common TypeScript interfaces
 │   └── types/        # Shared type definitions
@@ -38,12 +38,10 @@ harvest-hope/
 - **Vite** for fast development and optimized builds
 
 ### Backend
-- **AWS Lambda** (Python 3.11) for serverless compute
-- **AWS API Gateway** for RESTful endpoints
-- **AWS DynamoDB** for game state persistence
-- **AWS S3** for static assets (sprites, audio, data files)
-- **AWS Bedrock** (Claude 3.5 Sonnet) for AI content generation
-- **AWS CloudWatch** for monitoring and logging
+- **Client-side only**: All game logic runs in the browser
+- **Local Storage**: Game state persistence in browser
+- **Google Gemini AI**: AI content generation via API
+- **No server required**: Fully static deployment
 
 ### Testing
 - **Jest** for unit testing
