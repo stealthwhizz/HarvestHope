@@ -30,6 +30,7 @@ Welcome to the complete documentation suite for Harvest Hope! This folder contai
 | **[☁️ Deployment Guide](DEPLOYMENT.md)** | Production deployment instructions | DevOps, Developers | ✅ Complete |
 | **[⚡ Performance Optimizations](PERFORMANCE_OPTIMIZATIONS.md)** | Performance tuning guide | Developers | ✅ Complete |
 | **[⚙️ Project Configuration](project-config.md)** | Project setup and configuration | Developers | ✅ Complete |
+| **[🔒 .gitignore Guide](GITIGNORE_GUIDE.md)** | Repository security and file exclusions | All Developers | ✅ Complete |
 
 ## 🎯 Quick Navigation
 
@@ -60,9 +61,9 @@ AI troubleshooting and improvements:
 ## 📊 Documentation Statistics
 
 ### 📈 Coverage Metrics
-- **📁 Total Documents**: 10 comprehensive guides
-- **📝 Total Pages**: 100+ pages of documentation
-- **🎯 Coverage Areas**: Setup, Development, Architecture, Features, Deployment
+- **📁 Total Documents**: 11 comprehensive guides
+- **📝 Total Pages**: 110+ pages of documentation
+- **🎯 Coverage Areas**: Setup, Development, Architecture, Features, Deployment, Security
 - **👥 Target Audiences**: Users, Developers, DevOps, Designers
 - **🔄 Last Updated**: December 2024
 
@@ -70,7 +71,7 @@ AI troubleshooting and improvements:
 - **🚀 Setup Guides**: 3 documents (Quick Start, API Setup, Development)
 - **🏗️ Technical Docs**: 3 documents (Architecture, Frontend, Backend)
 - **🎮 Feature Docs**: 2 documents (Game Features, AI Fixes)
-- **☁️ Deployment Docs**: 3 documents (Deployment, Performance, Config)
+- **☁️ Deployment Docs**: 4 documents (Deployment, Performance, Config, .gitignore)
 
 ## 🎨 Documentation Standards
 
