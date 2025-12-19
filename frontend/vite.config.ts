@@ -4,8 +4,8 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // Base path for deployment (adjust for GitHub Pages if needed)
-  base: process.env.NODE_ENV === 'production' ? '/' : '/',
+  // Base path for deployment (GitHub Pages uses repository name as base)
+  base: process.env.NODE_ENV === 'production' ? '/HarvestHope/' : '/',
   build: {
     // Output directory
     outDir: 'dist',
@@ -28,7 +28,8 @@ export default defineConfig({
         },
         // Asset naming for better caching
         assetFileNames: (assetInfo) => {
-          const info = assetInfo.name?.split('.') || [];
+          const fileName = assetInfo.names?.[0] || assetInfo.originalFileNames?.[0] || 'asset';
+          const info = fileName.split('.');
           const ext = info[info.length - 1];
           if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext || '')) {
             return `assets/images/[name]-[hash][extname]`;
