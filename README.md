@@ -5,13 +5,10 @@
 [![Live Demo](https://img.shields.io/badge/🎮_Play_Now-Live_Demo-4af626?style=for-the-badge)](http://localhost:5174)
 [![Documentation](https://img.shields.io/badge/📚_Docs-Complete_Guide-ffaa00?style=for-the-badge)](docs/)
 [![AI Powered](https://img.shields.io/badge/🤖_AI-Google_Gemini-ff4444?style=for-the-badge)](docs/API_SETUP.md)
-[![Kiro Challenge](https://img.shields.io/badge/🏆_Kiro-Weekly_Challenge-00ffff?style=for-the-badge)](#)
 
 ## 🎯 Project Overview
 
 Harvest Hope is an immersive farming simulation that combines engaging gameplay with real-world agricultural education. Players experience the complexities of Indian farming while learning about crop cycles, financial management, and government support systems.
-
-### 🏆 Built for Kiro Weekly Challenge
 
 This project demonstrates advanced AI integration, modern web development practices, and educational gaming concepts - perfect for the AWS-sponsored Kiro weekly challenge.
 
