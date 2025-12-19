@@ -4,6 +4,7 @@
  */
 
 import { callGemini } from './geminiService';
+import { parseJSONFromAIResponse } from './jsonUtils';
 import type { WeatherData } from './weatherService';
 
 export interface WeatherAdvisory {
@@ -47,7 +48,7 @@ Consider:
 4. Pest and disease risks based on humidity/rainfall
 5. Optimal timing for planting, irrigation, and harvesting
 
-Return ONLY valid JSON in this exact format:
+Return ONLY valid JSON (no markdown, no code blocks, no explanations) in this exact format:
 {
   "overall_condition": "Excellent/Good/Fair/Poor - brief reason",
   "total_rainfall": ${weatherData.summary.total_rainfall},
@@ -65,16 +66,12 @@ Return ONLY valid JSON in this exact format:
 
 Focus on actionable, practical advice that Indian farmers can implement immediately.`;
 
+  let response = '';
   try {
-    const response = await callGemini(prompt);
+    response = await callGemini(prompt);
     
-    // Extract JSON from AI response
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('No JSON found in AI response');
-    }
-    
-    const advisory = JSON.parse(jsonMatch[0]);
+    // Parse JSON from AI response (handles markdown code blocks)
+    const advisory = parseJSONFromAIResponse(response);
     
     // Validate and sanitize the response
     const validatedAdvisory: WeatherAdvisory = {

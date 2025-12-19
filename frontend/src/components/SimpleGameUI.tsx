@@ -3,8 +3,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { getRealWeatherData } from '../services/weatherService';
-import { getWeatherAdvisory } from '../services/weatherAdvisoryService';
+import { clearPriceCache } from '../services/marketPriceService';
+
+import { predictWeather, predictMarketPrices, getFarmingTip } from '../services/aiPredictions';
+import type { NPCData, CrisisType } from '../../../shared/types/game-state';
 
 interface CropTile {
   id: number;
@@ -12,6 +14,30 @@ interface CropTile {
   plantedDay: number;
   growthStage: 'seedling' | 'growing' | 'mature' | 'harvestable';
   quantity: number;
+}
+
+// Loan interface
+interface Loan {
+  id: string;
+  type: 'bank' | 'moneylender' | 'government';
+  principal: number;
+  interestRate: number; // Annual percentage
+  monthlyEMI: number;
+  remainingAmount: number;
+  startDay: number;
+  nextEMIDay: number;
+  missedPayments: number;
+  status: 'active' | 'defaulted' | 'paid';
+}
+
+// Financial transaction interface
+interface Transaction {
+  id: string;
+  day: number;
+  type: 'income' | 'expense';
+  category: 'crop_sale' | 'loan_received' | 'scheme_payment' | 'emi_payment' | 'crop_purchase' | 'equipment' | 'other';
+  amount: number;
+  description: string;
 }
 
 // Game save interface
@@ -23,6 +49,9 @@ interface GameSave {
   plantedCrops: CropTile[];
   harvestedCrops: {type: string, quantity: number}[];
   appliedSchemes: string[];
+  loans: Loan[];
+  creditScore: number;
+  transactions: Transaction[];
   lastSaved: number;
 }
 
@@ -63,23 +92,34 @@ const SimpleGameUI: React.FC = () => {
   const [plantedCrops, setPlantedCrops] = useState<CropTile[]>(savedState?.plantedCrops ?? []);
   const [harvestedCrops, setHarvestedCrops] = useState<{type: string, quantity: number}[]>(savedState?.harvestedCrops ?? []);
   const [appliedSchemes, setAppliedSchemes] = useState<string[]>(savedState?.appliedSchemes ?? []);
+  const [loans, setLoans] = useState<Loan[]>(savedState?.loans ?? []);
+  const [creditScore, setCreditScore] = useState(savedState?.creditScore ?? 750);
+  const [transactions, setTransactions] = useState<Transaction[]>(savedState?.transactions ?? []);
   
   // Non-persistent UI state
   const [notifications, setNotifications] = useState<string[]>([]);
   const [showWeatherModal, setShowWeatherModal] = useState(false);
   const [showSchemesModal, setShowSchemesModal] = useState(false);
+  const [showMarketModal, setShowMarketModal] = useState(false);
+  const [showNPCModal, setShowNPCModal] = useState(false);
+  const [showLoanModal, setShowLoanModal] = useState(false);
+  const [showFinancialModal, setShowFinancialModal] = useState(false);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [aiWeatherData, setAiWeatherData] = useState<any>(null);
+  const [marketData, setMarketData] = useState<any>(null);
+  const [marketLoading, setMarketLoading] = useState(false);
+  const [currentNPC, setCurrentNPC] = useState<NPCData | null>(null);
+  const [npcLoading, setNpcLoading] = useState(false);
   const [showSaveIndicator, setShowSaveIndicator] = useState(false);
 
   const seasons = ['Kharif', 'Rabi', 'Zaid', 'Off-season'];
   
-  // Realistic crop growth configuration (in days)
+  // Fast crop growth configuration (in days) - optimized for gameplay
   const cropGrowthDays = {
-    rice: { daysToMaturity: 120, yield: 25 },      // 4 months - realistic for rice
-    wheat: { daysToMaturity: 90, yield: 30 },      // 3 months - realistic for wheat  
-    cotton: { daysToMaturity: 150, yield: 15 },    // 5 months - realistic for cotton
-    sugarcane: { daysToMaturity: 365, yield: 80 }  // 12 months - realistic for sugarcane
+    rice: { daysToMaturity: 12, yield: 25 },      // 12 days - fast gameplay
+    wheat: { daysToMaturity: 9, yield: 30 },      // 9 days - fast gameplay  
+    cotton: { daysToMaturity: 15, yield: 15 },    // 15 days - fast gameplay
+    sugarcane: { daysToMaturity: 30, yield: 80 }  // 30 days - fast gameplay
   };
 
   const cropPrices = {
@@ -87,6 +127,114 @@ const SimpleGameUI: React.FC = () => {
     wheat: 2200,   // ₹2200 per quintal
     cotton: 6000,  // ₹6000 per quintal
     sugarcane: 350 // ₹350 per quintal
+  };
+
+  // Loan configurations based on Requirement 4
+  const loanTypes = {
+    bank: {
+      name: 'Bank KCC Loan',
+      interestRate: 7, // 7% annual
+      maxAmount: 300000,
+      description: 'Kisan Credit Card loan with collateral',
+      processingTime: 'Instant approval with good credit score'
+    },
+    moneylender: {
+      name: 'Moneylender Loan',
+      interestRate: 36, // 36% annual (3% monthly)
+      maxAmount: 100000,
+      description: 'Quick cash but high interest',
+      processingTime: 'Instant approval'
+    },
+    government: {
+      name: 'Government Scheme Loan',
+      interestRate: 4, // 4% annual
+      maxAmount: 200000,
+      description: 'Subsidized loan for farmers',
+      processingTime: 'Requires documentation'
+    }
+  };
+
+  // Calculate EMI using standard formula
+  const calculateEMI = (principal: number, annualRate: number, tenureMonths: number = 12): number => {
+    const monthlyRate = annualRate / 100 / 12;
+    if (monthlyRate === 0) return principal / tenureMonths;
+    
+    const emi = (principal * monthlyRate * Math.pow(1 + monthlyRate, tenureMonths)) / 
+                (Math.pow(1 + monthlyRate, tenureMonths) - 1);
+    return Math.round(emi);
+  };
+
+  // Calculate total debt
+  const getTotalDebt = (): number => {
+    return loans.reduce((total, loan) => total + loan.remainingAmount, 0);
+  };
+
+  // Record financial transaction
+  const recordTransaction = (type: Transaction['type'], category: Transaction['category'], amount: number, description: string) => {
+    const transaction: Transaction = {
+      id: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      day,
+      type,
+      category,
+      amount,
+      description
+    };
+    setTransactions(prev => [...prev, transaction]);
+  };
+
+  // Get financial summary for last 30 days
+  const getFinancialSummary = () => {
+    const recentTransactions = transactions.filter(txn => txn.day >= day - 30);
+    const income = recentTransactions.filter(txn => txn.type === 'income').reduce((sum, txn) => sum + txn.amount, 0);
+    const expenses = recentTransactions.filter(txn => txn.type === 'expense').reduce((sum, txn) => sum + txn.amount, 0);
+    return { income, expenses, profit: income - expenses, transactions: recentTransactions };
+  };
+
+  // Process EMI payments
+  const processEMIPayments = () => {
+    const updatedLoans = loans.map(loan => {
+      if (loan.status !== 'active' || day < loan.nextEMIDay) return loan;
+      
+      // EMI is due
+      if (money >= loan.monthlyEMI) {
+        // Payment successful
+        const newRemainingAmount = Math.max(0, loan.remainingAmount - loan.monthlyEMI);
+        const newStatus = newRemainingAmount === 0 ? 'paid' : 'active';
+        
+        setMoney(prev => prev - loan.monthlyEMI);
+        recordTransaction('expense', 'emi_payment', loan.monthlyEMI, `EMI for ${loanTypes[loan.type].name}`);
+        setNotifications(prev => [...prev, `💳 EMI paid: ₹${loan.monthlyEMI.toLocaleString()} for ${loanTypes[loan.type].name}`]);
+        
+        // Improve credit score for on-time payment
+        setCreditScore(prev => Math.min(850, prev + 2));
+        
+        return {
+          ...loan,
+          remainingAmount: newRemainingAmount,
+          nextEMIDay: day + 30, // Next EMI in 30 days
+          status: newStatus
+        } as Loan;
+      } else {
+        // Payment failed - missed EMI
+        const newMissedPayments = loan.missedPayments + 1;
+        const penalty = Math.round(loan.monthlyEMI * 0.02); // 2% penalty
+        
+        setNotifications(prev => [...prev, `⚠️ EMI missed! Penalty: ₹${penalty.toLocaleString()}`]);
+        
+        // Reduce credit score for missed payment
+        setCreditScore(prev => Math.max(300, prev - 10));
+        
+        return {
+          ...loan,
+          remainingAmount: loan.remainingAmount + penalty,
+          nextEMIDay: day + 30,
+          missedPayments: newMissedPayments,
+          status: (newMissedPayments >= 3 ? 'defaulted' : 'active') as Loan['status']
+        };
+      }
+    });
+    
+    setLoans(updatedLoans);
   };
 
 
@@ -139,6 +287,9 @@ const SimpleGameUI: React.FC = () => {
       plantedCrops,
       harvestedCrops,
       appliedSchemes,
+      loans,
+      creditScore,
+      transactions,
       lastSaved: Date.now()
     };
     
@@ -150,7 +301,7 @@ const SimpleGameUI: React.FC = () => {
     const timer = setTimeout(() => setShowSaveIndicator(false), 2000);
     
     return () => clearTimeout(timer);
-  }, [money, day, season, selectedCrop, plantedCrops, harvestedCrops, appliedSchemes]);
+  }, [money, day, season, selectedCrop, plantedCrops, harvestedCrops, appliedSchemes, loans, creditScore, transactions]);
 
   // Show welcome back message if game was loaded
   useEffect(() => {
@@ -160,11 +311,86 @@ const SimpleGameUI: React.FC = () => {
         setNotifications(prev => prev.slice(1));
       }, 4000);
     }
+    
+    // AI features are available but no startup notifications
+    
+    setTimeout(() => {
+      setNotifications(prev => prev.slice(1));
+    }, 6000);
   }, []); // Only run once on mount
   
+  // Apply for loan
+  const applyForLoan = (type: keyof typeof loanTypes, amount: number) => {
+    const loanConfig = loanTypes[type];
+    
+    // Validation
+    if (amount > loanConfig.maxAmount) {
+      setNotifications(prev => [...prev, `❌ Loan amount exceeds maximum limit of ₹${loanConfig.maxAmount.toLocaleString()}`]);
+      return;
+    }
+    
+    if (amount < 10000) {
+      setNotifications(prev => [...prev, `❌ Minimum loan amount is ₹10,000`]);
+      return;
+    }
+    
+    // Credit score check for bank loans
+    if (type === 'bank' && creditScore < 650) {
+      setNotifications(prev => [...prev, `❌ Bank loan rejected. Credit score too low: ${creditScore}/850`]);
+      return;
+    }
+    
+    // Create new loan
+    const monthlyEMI = calculateEMI(amount, loanConfig.interestRate);
+    const newLoan: Loan = {
+      id: `loan_${Date.now()}`,
+      type,
+      principal: amount,
+      interestRate: loanConfig.interestRate,
+      monthlyEMI,
+      remainingAmount: amount,
+      startDay: day,
+      nextEMIDay: day + 30, // First EMI in 30 days
+      missedPayments: 0,
+      status: 'active'
+    };
+    
+    setLoans(prev => [...prev, newLoan]);
+    setMoney(prev => prev + amount);
+    recordTransaction('income', 'loan_received', amount, `${loanConfig.name} disbursed`);
+    setNotifications(prev => [...prev, `✅ ${loanConfig.name} approved! ₹${amount.toLocaleString()} credited. EMI: ₹${monthlyEMI.toLocaleString()}/month`]);
+    setShowLoanModal(false);
+  };
+
   const handleAdvanceDay = () => {
     const newDay = day + 1;
     setDay(newDay);
+    
+    // Daily farm maintenance cost (realistic farming expense)
+    const dailyMaintenanceCost = 200 + Math.floor(plantedCrops.length * 50); // Base cost + per crop
+    if (money >= dailyMaintenanceCost) {
+      setMoney(prev => prev - dailyMaintenanceCost);
+      recordTransaction('expense', 'other', dailyMaintenanceCost, 'Daily farm maintenance');
+    }
+    
+    // Check for upcoming EMI payments (3 days warning)
+    const upcomingEMIs = loans.filter(loan => 
+      loan.status === 'active' && 
+      loan.nextEMIDay - newDay <= 3 && 
+      loan.nextEMIDay > newDay
+    );
+    
+    if (upcomingEMIs.length > 0) {
+      const daysLeft = upcomingEMIs[0].nextEMIDay - newDay;
+      setNotifications(prev => [...prev, `⏰ EMI due in ${daysLeft} days: ₹${upcomingEMIs[0].monthlyEMI.toLocaleString()}`]);
+    }
+    
+    // Process EMI payments for the new day
+    processEMIPayments();
+    
+    // Clear market price cache for new day
+    clearPriceCache();
+    setMarketData(null);
     
     // Change season every 30 days for demo
     if (newDay % 30 === 0) {
@@ -174,8 +400,96 @@ const SimpleGameUI: React.FC = () => {
     }
   };
 
-  const handleAddMoney = () => {
-    setMoney(money + 10000);
+  const handleSkipMonth = () => {
+    if (!confirm('⏭️ Skip 30 days? This will:\n• Advance crops by 30 days\n• Process any due EMI payments\n• Charge monthly maintenance costs\n• Change season\n\nContinue?')) {
+      return;
+    }
+    
+    const daysToSkip = 30;
+    const newDay = day + daysToSkip;
+    setDay(newDay);
+    
+    // Calculate total maintenance cost for the month
+    const dailyMaintenanceCost = 200 + Math.floor(plantedCrops.length * 50);
+    const monthlyMaintenanceCost = dailyMaintenanceCost * daysToSkip;
+    
+    if (money >= monthlyMaintenanceCost) {
+      setMoney(prev => prev - monthlyMaintenanceCost);
+      recordTransaction('expense', 'other', monthlyMaintenanceCost, `Monthly farm maintenance (${daysToSkip} days)`);
+    }
+    
+    // Process any EMI payments that would be due during the skipped month
+    const updatedLoans = loans.map(loan => {
+      if (loan.status !== 'active') return loan;
+      
+      // Calculate how many EMIs are due during the skipped period
+      let emisDue = 0;
+      let nextEMIDay = loan.nextEMIDay;
+      
+      while (nextEMIDay <= newDay) {
+        emisDue++;
+        nextEMIDay += 30; // Next EMI in 30 days
+      }
+      
+      if (emisDue > 0) {
+        const totalEMIAmount = loan.monthlyEMI * emisDue;
+        
+        if (money >= totalEMIAmount) {
+          // Pay all due EMIs
+          setMoney(prev => prev - totalEMIAmount);
+          recordTransaction('expense', 'emi_payment', totalEMIAmount, `${emisDue} EMI payments for ${loanTypes[loan.type].name}`);
+          
+          const newRemainingAmount = Math.max(0, loan.remainingAmount - totalEMIAmount);
+          const newStatus = newRemainingAmount === 0 ? 'paid' : 'active';
+          
+          // Improve credit score for on-time payments
+          setCreditScore(prev => Math.min(850, prev + (2 * emisDue)));
+          
+          return {
+            ...loan,
+            remainingAmount: newRemainingAmount,
+            nextEMIDay: nextEMIDay,
+            status: newStatus
+          } as Loan;
+        } else {
+          // Missed payments - apply penalties
+          const penalty = Math.round(loan.monthlyEMI * 0.02 * emisDue);
+          const newMissedPayments = loan.missedPayments + emisDue;
+          
+          // Reduce credit score for missed payments
+          setCreditScore(prev => Math.max(300, prev - (10 * emisDue)));
+          
+          setNotifications(prev => [...prev, `⚠️ Missed ${emisDue} EMI payments! Penalty: ₹${penalty.toLocaleString()}`]);
+          
+          return {
+            ...loan,
+            remainingAmount: loan.remainingAmount + penalty,
+            nextEMIDay: nextEMIDay,
+            missedPayments: newMissedPayments,
+            status: (newMissedPayments >= 3 ? 'defaulted' : 'active') as Loan['status']
+          };
+        }
+      }
+      
+      return loan;
+    });
+    
+    setLoans(updatedLoans);
+    
+    // Clear market price cache for new day
+    clearPriceCache();
+    setMarketData(null);
+    
+    // Change season (every 30 days)
+    const currentIndex = seasons.indexOf(season);
+    const nextIndex = (currentIndex + 1) % seasons.length;
+    setSeason(seasons[nextIndex]);
+    
+    // Show notification
+    setNotifications(prev => [...prev, `⏭️ Skipped ${daysToSkip} days! New season: ${seasons[nextIndex]}`]);
+    setTimeout(() => {
+      setNotifications(prev => prev.slice(1));
+    }, 4000);
   };
 
   const handleNewGame = () => {
@@ -185,6 +499,9 @@ const SimpleGameUI: React.FC = () => {
       
       // Reset all state to defaults
       setMoney(100000);
+      setLoans([]);
+      setCreditScore(750);
+      setTransactions([]);
       setDay(1);
       setSeason('Kharif');
       setSelectedCrop('rice');
@@ -252,6 +569,7 @@ const SimpleGameUI: React.FC = () => {
         };
         setPlantedCrops([...plantedCrops, newCrop]);
         setMoney(money - plantingCost);
+        recordTransaction('expense', 'crop_purchase', plantingCost, `Planted ${selectedCrop} seeds`);
         
         // Show planting notification
         const daysToMaturity = cropGrowthDays[selectedCrop as keyof typeof cropGrowthDays].daysToMaturity;
@@ -303,6 +621,7 @@ const SimpleGameUI: React.FC = () => {
     const revenue = Math.floor((quantity * pricePerKg) / 100); // Convert kg to quintal pricing
     
     setMoney(prev => prev + revenue);
+    recordTransaction('income', 'crop_sale', revenue, `Sold ${quantity}kg ${cropType.toUpperCase()}`);
     setHarvestedCrops(prev => 
       prev.map(item => 
         item.type === cropType 
@@ -382,117 +701,7 @@ const SimpleGameUI: React.FC = () => {
     return `₹${amount.toLocaleString('en-IN')}`;
   };
 
-  // Generate realistic Indian weather forecast
-  const generateWeatherForecast = () => {
-    const baseTemp = season === 'Kharif' ? 28 : season === 'Rabi' ? 22 : season === 'Zaid' ? 35 : 25;
-    const forecast = [];
-    
-    for (let i = 0; i < 7; i++) {
-      const dayOffset = i + 1;
-      const temp = baseTemp + Math.floor(Math.random() * 8) - 4; // ±4°C variation
-      
-      // Season-based weather patterns
-      let condition, rainfall, icon;
-      if (season === 'Kharif') {
-        // Monsoon season - more rain
-        const rainChance = Math.random();
-        if (rainChance > 0.6) {
-          condition = 'Heavy Rain';
-          rainfall = Math.floor(Math.random() * 50) + 20; // 20-70mm
-          icon = '🌧️';
-        } else if (rainChance > 0.3) {
-          condition = 'Light Rain';
-          rainfall = Math.floor(Math.random() * 15) + 5; // 5-20mm
-          icon = '🌦️';
-        } else {
-          condition = 'Cloudy';
-          rainfall = 0;
-          icon = '☁️';
-        }
-      } else if (season === 'Rabi') {
-        // Winter season - dry and cool
-        const weatherChance = Math.random();
-        if (weatherChance > 0.8) {
-          condition = 'Light Rain';
-          rainfall = Math.floor(Math.random() * 10) + 2; // 2-12mm
-          icon = '🌦️';
-        } else if (weatherChance > 0.4) {
-          condition = 'Sunny';
-          rainfall = 0;
-          icon = '☀️';
-        } else {
-          condition = 'Partly Cloudy';
-          rainfall = 0;
-          icon = '🌤️';
-        }
-      } else if (season === 'Zaid') {
-        // Summer season - hot and dry
-        const weatherChance = Math.random();
-        if (weatherChance > 0.9) {
-          condition = 'Thunderstorm';
-          rainfall = Math.floor(Math.random() * 30) + 10; // 10-40mm
-          icon = '⛈️';
-        } else if (weatherChance > 0.7) {
-          condition = 'Hot & Sunny';
-          rainfall = 0;
-          icon = '🌞';
-        } else {
-          condition = 'Clear';
-          rainfall = 0;
-          icon = '☀️';
-        }
-      } else {
-        // Off-season - mild weather
-        condition = 'Pleasant';
-        rainfall = 0;
-        icon = '🌤️';
-      }
-      
-      forecast.push({
-        day: `Day ${day + dayOffset}`,
-        condition,
-        icon,
-        tempMin: temp - 3,
-        tempMax: temp + 5,
-        rainfall,
-        humidity: Math.floor(Math.random() * 30) + (season === 'Kharif' ? 60 : 40)
-      });
-    }
-    
-    return forecast;
-  };
 
-  // Get farming advisory based on season and weather
-  const getFarmingAdvisory = () => {
-    const advisories = {
-      'Kharif': [
-        '🌾 Perfect time for rice planting - monsoon provides natural irrigation',
-        '🌧️ Ensure proper drainage to prevent waterlogging',
-        '☁️ High humidity may increase pest risk - monitor crops closely',
-        '💧 Utilize rainwater harvesting for future dry spells'
-      ],
-      'Rabi': [
-        '🌾 Ideal for wheat cultivation - cool weather promotes growth',
-        '💧 Irrigation required as rainfall is minimal',
-        '🌡️ Protect crops from sudden temperature drops',
-        '🌱 Good time for vegetable cultivation'
-      ],
-      'Zaid': [
-        '🌽 Focus on heat-resistant crops like sugarcane',
-        '💧 Intensive irrigation needed due to high temperatures',
-        '🌞 Use mulching to conserve soil moisture',
-        '⚠️ Avoid planting during peak summer heat'
-      ],
-      'Off-season': [
-        '🛠️ Prepare fields for next planting season',
-        '🌱 Good time for soil improvement and composting',
-        '💧 Maintain irrigation systems',
-        '📚 Plan crop rotation for optimal yield'
-      ]
-    };
-    
-    return advisories[season as keyof typeof advisories] || advisories['Off-season'];
-  };
 
   // Government Schemes Data
   const governmentSchemes = [
@@ -557,13 +766,16 @@ const SimpleGameUI: React.FC = () => {
     // Apply benefits based on scheme type
     if (scheme.type === 'income_support') {
       setMoney(prev => prev + scheme.amount);
+      recordTransaction('income', 'scheme_payment', scheme.amount, `${scheme.name} benefit received`);
       setNotifications(prev => [...prev, `✅ ${scheme.name}: ₹${scheme.amount.toLocaleString()} received!`]);
     } else if (scheme.type === 'insurance') {
       // For demo, give immediate benefit
       setMoney(prev => prev + scheme.amount);
+      recordTransaction('income', 'scheme_payment', scheme.amount, `${scheme.name} insurance payout`);
       setNotifications(prev => [...prev, `🛡️ ${scheme.name}: Insurance coverage activated!`]);
     } else if (scheme.type === 'credit') {
       setMoney(prev => prev + scheme.amount);
+      recordTransaction('income', 'scheme_payment', scheme.amount, `${scheme.name} credit facility`);
       setNotifications(prev => [...prev, `💳 ${scheme.name}: Credit facility approved!`]);
     }
 
@@ -573,71 +785,49 @@ const SimpleGameUI: React.FC = () => {
     }, 4000);
   };
 
-  // Fetch Real Weather + AI Advisory
-  const fetchRealWeatherWithAI = async () => {
+  // AI Weather Analytics
+  const fetchSimpleWeatherPrediction = async () => {
     setWeatherLoading(true);
     
     try {
-      console.log('🌍 Step 1: Fetching REAL weather data...');
+      console.log('🌦️ Analyzing weather patterns with AI...');
       
-      // Use imported services
-      
-      // 1. Get REAL weather data (no API key needed!)
-      const realWeatherData = await getRealWeatherData('maharashtra');
-      
-      console.log('🤖 Step 2: Generating AI farming advisory...');
-      
-      // 2. Get AI advisory based on real weather data
+      // Get simple weather prediction with game context
       const currentCrops = plantedCrops.map(crop => crop.cropType);
-      const aiAdvisory = await getWeatherAdvisory(realWeatherData, 'Maharashtra', currentCrops);
+      const weatherForecast = await predictWeather(day, season, 'Maharashtra', currentCrops);
       
-      // 3. Combine real weather + AI advisory
-      const combinedData = {
-        forecast: realWeatherData.forecast.map(day => ({
-          day: day.day_number,
-          date: day.date,
-          condition: day.condition,
-          icon: day.icon,
-          temperature: {
-            min: day.temp_min,
-            max: day.temp_max
-          },
-          tempMin: day.temp_min, // Backward compatibility
-          tempMax: day.temp_max,
-          rainfall: day.rainfall_mm,
-          humidity: day.humidity,
-          advisory: aiAdvisory.crop_advice[currentCrops[0]] || 'Monitor weather conditions'
-        })),
-        summary: `${aiAdvisory.overall_condition} - ${realWeatherData.summary.total_rainfall}mm total rainfall expected`,
-        farming_tips: [
-          aiAdvisory.irrigation_need,
-          ...aiAdvisory.warnings,
-          `Drought Risk: ${aiAdvisory.drought_risk}%`,
-          `Flood Risk: ${aiAdvisory.flood_risk}%`
-        ],
+      // Get farming tip for current crop with growth stage
+      const currentCrop = selectedCrop || 'rice';
+      const currentPlantedCrop = plantedCrops.find(crop => crop.cropType === currentCrop);
+      const growthStage = currentPlantedCrop?.growthStage || 'growing';
+      const farmingTip = await getFarmingTip(currentCrop, season, day, growthStage);
+      
+      // Create simple weather data
+      const simpleWeatherData = {
+        forecast: weatherForecast,
+        farmingTip: farmingTip,
+        season: season,
+        day: day,
         isAI: true,
-        source: `${realWeatherData.source} + ${aiAdvisory.source}`,
-        realWeather: realWeatherData,
-        aiAdvisory: aiAdvisory
+        source: 'AI Weather Analytics'
       };
       
-      setAiWeatherData(combinedData);
-      setNotifications(prev => [...prev, '✅ Real weather + AI advisory generated!']);
+      setAiWeatherData(simpleWeatherData);
       
     } catch (error) {
-      console.error('🚨 Weather system error:', error);
-      console.log('🔄 Falling back to simulated data because:', (error as Error).message);
+      console.error('🚨 Weather prediction error:', error);
       
-      // Fallback to simulated data with delay
-      setTimeout(() => {
-        const fallbackData = generateFallbackWeatherData();
-        (fallbackData as any).isAI = false;
-        (fallbackData as any).source = 'Simulated (Real API unavailable)';
-        setAiWeatherData(fallbackData);
-        setNotifications(prev => [...prev, '⚠️ Using simulated weather data']);
-        setWeatherLoading(false);
-      }, 2000);
-      return;
+      // Fallback weather
+      const fallbackWeather = {
+        forecast: 'Day 1: Sunny, Day 2: Cloudy, Day 3: Rainy',
+        farmingTip: 'Monitor your crops regularly and maintain good farming practices.',
+        season: season,
+        day: day,
+        isAI: false,
+        source: 'Weather Simulation Engine'
+      };
+      
+      setAiWeatherData(fallbackWeather);
     }
     
     setWeatherLoading(false);
@@ -646,105 +836,247 @@ const SimpleGameUI: React.FC = () => {
     }, 3000);
   };
 
-  // Generate fallback weather data when AI is unavailable
-  const generateFallbackWeatherData = () => {
-    const conditions = ['sunny', 'partly_cloudy', 'cloudy', 'light_rain', 'heavy_rain'];
-    const forecast = [];
+  // AI Market Analytics
+  const fetchSimpleMarketPrices = async () => {
+    setMarketLoading(true);
     
-    for (let i = 0; i < 7; i++) {
-      const condition = conditions[Math.floor(Math.random() * conditions.length)];
-      const baseTemp = season === 'Kharif' ? 28 : season === 'Rabi' ? 22 : season === 'Zaid' ? 35 : 25;
+    try {
+      console.log('💹 Analyzing market trends with AI...');
       
-      forecast.push({
-        day: i + 1,
-        date: `Day ${day + i + 1}`,
-        condition,
-        icon: getWeatherIcon(condition),
-        temperature: {
-          min: baseTemp - 3 + Math.floor(Math.random() * 4),
-          max: baseTemp + 2 + Math.floor(Math.random() * 6)
+      // Get AI prices for all crops
+      const crops = ['rice', 'wheat', 'cotton', 'sugarcane'];
+      const marketPrices: { [key: string]: number } = {};
+      
+      for (const crop of crops) {
+        const harvestedCrop = harvestedCrops.find(item => item.type === crop);
+        const quantity = harvestedCrop?.quantity || 0;
+        const price = await predictMarketPrices(crop, season, day, money, quantity);
+        marketPrices[crop] = price;
+      }
+      
+      // Create simple market data
+      const simpleMarketData = {
+        date: `Day ${day}`,
+        season: season,
+        prices: marketPrices,
+        isAI: true,
+        source: 'AI Market Analytics'
+      };
+      
+      setMarketData(simpleMarketData);
+      
+    } catch (error) {
+      console.error('🚨 Market price error:', error);
+      
+      // Fallback prices (MSP)
+      const fallbackPrices = {
+        date: `Day ${day}`,
+        season: season,
+        prices: {
+          rice: 2100,
+          wheat: 2125,
+          cotton: 5500,
+          sugarcane: 290
         },
-        rainfall: condition.includes('rain') ? Math.floor(Math.random() * 40) + 10 : 0,
-        humidity: 50 + Math.floor(Math.random() * 30) + (season === 'Kharif' ? 20 : 0),
-        advisory: getSeasonalAdvice(condition, season)
-      });
+        isAI: false,
+        source: 'Government MSP Database'
+      };
+      
+      setMarketData(fallbackPrices);
     }
     
+    setMarketLoading(false);
+    setTimeout(() => {
+      setNotifications(prev => prev.slice(1));
+    }, 3000);
+  };
+
+  // Helper functions to extract information from AI-generated stories
+  const extractNameFromStory = (story: string): string | null => {
+    const nameMatch = story.match(/([A-Z][a-z]+ [A-Z][a-z]+)/);
+    return nameMatch ? nameMatch[1] : null;
+  };
+
+  const extractLocationFromStory = (story: string): string => {
+    const locations = ['Vidarbha', 'Marathwada', 'Western Maharashtra', 'Konkan', 'Northern Maharashtra'];
+    for (const location of locations) {
+      if (story.includes(location)) return location;
+    }
+    return 'Maharashtra';
+  };
+
+  const extractCrisisFromStory = (story: string): string => {
+    if (story.includes('flood') || story.includes('water')) return 'flood';
+    if (story.includes('drought') || story.includes('rain') || story.includes('dry')) return 'drought';
+    if (story.includes('pest') || story.includes('bollworm') || story.includes('insect')) return 'pest';
+    if (story.includes('debt') || story.includes('loan') || story.includes('money')) return 'debt';
+    if (story.includes('health') || story.includes('medical') || story.includes('hospital')) return 'health';
+    if (story.includes('equipment') || story.includes('tractor') || story.includes('machine')) return 'equipment';
+    return 'debt'; // Default
+  };
+
+  // Generate fallback NPC when service is unavailable
+  const generateFallbackNPC = (): NPCData => {
+    const names = [
+      'Ramesh Kumar', 'Priya Sharma', 'Suresh Patel', 'Meera Devi', 'Rajesh Singh',
+      'Sunita Yadav', 'Mohan Reddy', 'Kavita Joshi', 'Anil Gupta', 'Rekha Kumari'
+    ];
+    
+    const locations = [
+      'Vidarbha, Maharashtra', 'Bundelkhand, Uttar Pradesh', 'Rayalaseema, Andhra Pradesh',
+      'Marathwada, Maharashtra', 'Telangana', 'Punjab', 'Haryana', 'Karnataka'
+    ];
+    
+    const crises: CrisisType[] = ['drought', 'flood', 'pest', 'debt', 'health', 'equipment'];
+    const farmSizes = ['small (1-2 acres)', 'medium (3-5 acres)', 'large (6+ acres)'];
+    const crops = [['rice', 'cotton'], ['wheat', 'sugarcane'], ['cotton', 'soybean'], ['rice', 'vegetables']];
+    
+    const backstories = [
+      'A third-generation farmer struggling to maintain traditional farming methods in changing times.',
+      'A young farmer trying to modernize the family farm while dealing with mounting debts.',
+      'A widow managing her late husband\'s farm while raising three children alone.',
+      'A progressive farmer experimenting with organic methods but facing market challenges.',
+      'An elderly farmer whose sons moved to the city, leaving him to manage the farm alone.',
+      'A tenant farmer working on leased land with dreams of owning property someday.',
+      'A farmer who lost crops to unexpected weather and is rebuilding from scratch.',
+      'A cooperative leader helping other farmers but neglecting his own financial troubles.'
+    ];
+    
+    const selectedCrisis = crises[Math.floor(Math.random() * crises.length)];
+    const crisisLevel = Math.floor(Math.random() * 5) + 1;
+    
+    const crisisDetails: Record<CrisisType, string> = {
+      drought: `Facing severe water shortage for ${crisisLevel} consecutive months. Wells have dried up and crops are withering.`,
+      flood: `Farm flooded ${crisisLevel} times this season. Lost standing crops worth ₹${(crisisLevel * 25000).toLocaleString()}.`,
+      pest: `Pest attack destroyed ${crisisLevel * 20}% of crops. Spent ₹${(crisisLevel * 15000).toLocaleString()} on pesticides with little success.`,
+      debt: `Owes ₹${(crisisLevel * 100000).toLocaleString()} to moneylenders at ${crisisLevel * 8}% monthly interest. Unable to repay.`,
+      health: `Suffering from ${crisisLevel > 3 ? 'chronic illness' : 'health issues'} for ${crisisLevel} months. Medical bills mounting.`,
+      equipment: `Tractor broke down ${crisisLevel} months ago. Cannot afford ₹${(crisisLevel * 50000).toLocaleString()} repair cost.`
+    };
+    
     return {
-      forecast,
-      summary: `${season} season weather pattern for Maharashtra region`,
-      farming_tips: getSeasonalTips(season),
-      isAI: false
+      id: `npc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: names[Math.floor(Math.random() * names.length)],
+      age: 25 + Math.floor(Math.random() * 40),
+      location: locations[Math.floor(Math.random() * locations.length)],
+      backstory: backstories[Math.floor(Math.random() * backstories.length)],
+      currentCrisis: selectedCrisis,
+      relationshipLevel: Math.floor(Math.random() * 21) - 10, // -10 to 10
+      dialogueHistory: [],
+      farmSize: farmSizes[Math.floor(Math.random() * farmSizes.length)],
+      familySize: Math.floor(Math.random() * 6) + 1,
+      primaryCrops: crops[Math.floor(Math.random() * crops.length)],
+      educationLevel: Math.random() > 0.7 ? 'High School' : Math.random() > 0.4 ? 'Primary' : 'Illiterate',
+      personality: Math.random() > 0.5 ? 'Optimistic despite challenges' : 'Worried but determined',
+      crisisDetails: crisisDetails[selectedCrisis],
+      dialogueStyle: 'Speaks with rural Indian dialect, emotional about farming struggles',
+      createdAt: new Date().toISOString(),
+      lastInteraction: new Date().toISOString()
     };
   };
 
-  const getWeatherIcon = (condition: string) => {
-    const iconMap: { [key: string]: string } = {
-      'sunny': '☀️',
-      'partly_cloudy': '🌤️',
-      'cloudy': '☁️',
-      'light_rain': '🌦️',
-      'heavy_rain': '🌧️',
-      'thunderstorm': '⛈️'
-    };
-    return iconMap[condition] || '🌤️';
+  // Handle Meet Farmers button click - AI Generated Stories
+  const handleMeetFarmers = async () => {
+    setNpcLoading(true);
+    
+    try {
+      console.log('🤝 Generating AI farmer story...');
+      
+      // Determine weather condition based on season
+      const weatherCondition = season === 'Kharif' ? 'rainy' : 
+                              season === 'Zaid' ? 'hot' : 'normal';
+      
+      // Generate AI-powered farmer story
+      const { generateNPCFarmerStory } = await import('../services/aiPredictions');
+      const aiStory = await generateNPCFarmerStory(season, day, money, weatherCondition);
+      
+      // Create NPC data from AI story
+      const aiNPC: NPCData = {
+        id: `ai_npc_${Date.now()}`,
+        name: extractNameFromStory(aiStory) || 'Anonymous Farmer',
+        age: Math.floor(Math.random() * 30) + 35, // 35-65 years old
+        location: extractLocationFromStory(aiStory) || 'Maharashtra',
+        backstory: aiStory,
+        currentCrisis: extractCrisisFromStory(aiStory) as CrisisType,
+        relationshipLevel: 0,
+        dialogueHistory: [
+          {
+            id: `dialogue_${Date.now()}`,
+            npcId: `ai_npc_${Date.now()}`,
+            playerChoice: 'Tell me about your situation',
+            npcResponse: `"${aiStory.split('.')[0]}."`,
+            timestamp: new Date().toISOString(),
+            relationshipChange: 0
+          }
+        ],
+        farmSize: `${Math.floor(Math.random() * 5) + 1} acres`,
+        primaryCrops: plantedCrops.length > 0 ? plantedCrops.map(c => c.cropType) : ['rice', 'wheat'],
+        crisisDetails: aiStory,
+        lastInteraction: new Date().toISOString()
+      };
+      
+      setCurrentNPC(aiNPC);
+      
+    } catch (error) {
+      console.error('🚨 AI NPC generation error:', error);
+      console.log('🔄 Using fallback farmer story');
+      
+      // Use fallback NPC generation
+      const fallbackNPC = generateFallbackNPC();
+      setCurrentNPC(fallbackNPC);
+    }
+    
+    setShowNPCModal(true);
+    setNpcLoading(false);
+    
+    setTimeout(() => {
+      setNotifications(prev => prev.slice(1));
+    }, 3000);
   };
 
-  const getSeasonalAdvice = (condition: string, currentSeason: string) => {
-    const advice: { [key: string]: { [key: string]: string } } = {
-      'Kharif': {
-        'sunny': 'Good for rice transplanting. Ensure adequate water supply.',
-        'light_rain': 'Ideal for cotton sowing. Monitor soil moisture.',
-        'heavy_rain': 'Avoid field operations. Check drainage systems.',
-        'cloudy': 'Suitable for nursery preparation. Monitor pest activity.'
-      },
-      'Rabi': {
-        'sunny': 'Perfect for wheat sowing. Prepare irrigation schedule.',
-        'light_rain': 'Beneficial for germination. Reduce irrigation.',
-        'cloudy': 'Good for vegetable cultivation. Monitor temperature.',
-        'heavy_rain': 'Protect crops from waterlogging. Delay harvesting.'
-      },
-      'Zaid': {
-        'sunny': 'Increase irrigation frequency. Use mulching.',
-        'light_rain': 'Reduce irrigation. Good for sugarcane growth.',
-        'heavy_rain': 'Rare but beneficial. Store rainwater.',
-        'cloudy': 'Reduce heat stress on crops. Continue normal operations.'
-      }
+  // Get crisis level color
+  const getCrisisColor = (crisis: CrisisType): string => {
+    const crisisLevels: Record<CrisisType, number> = {
+      health: 5,
+      debt: 4,
+      equipment: 3,
+      drought: 3,
+      flood: 3,
+      pest: 2
     };
     
-    return advice[currentSeason]?.[condition] || 'Monitor weather conditions and adjust farming activities accordingly.';
+    const level = crisisLevels[crisis] || 1;
+    
+    if (level >= 5) return '#ff4444'; // Red - Critical
+    if (level >= 4) return '#ff8800'; // Orange - High
+    if (level >= 3) return '#ffaa00'; // Yellow - Medium
+    if (level >= 2) return '#88cc00'; // Light Green - Low
+    return '#44ff44'; // Green - Minimal
   };
 
-  const getSeasonalTips = (currentSeason: string) => {
-    const tips: { [key: string]: string[] } = {
-      'Kharif': [
-        'Utilize monsoon rains for rice cultivation',
-        'Ensure proper drainage to prevent waterlogging',
-        'Monitor for pest outbreaks due to high humidity',
-        'Prepare for cotton and sugarcane planting'
-      ],
-      'Rabi': [
-        'Focus on wheat and mustard cultivation',
-        'Use residual soil moisture from monsoon',
-        'Implement efficient irrigation systems',
-        'Protect crops from cold waves'
-      ],
-      'Zaid': [
-        'Grow heat-resistant crops like fodder',
-        'Intensive irrigation required',
-        'Use mulching to conserve moisture',
-        'Prepare for pre-monsoon activities'
-      ],
-      'Off-season': [
-        'Prepare fields for next planting season',
-        'Maintain irrigation infrastructure',
-        'Plan crop rotation strategies',
-        'Soil testing and improvement'
-      ]
+  // Get crisis level text
+  const getCrisisLevelText = (crisis: CrisisType): string => {
+    const crisisLevels: Record<CrisisType, number> = {
+      health: 5,
+      debt: 4,
+      equipment: 3,
+      drought: 3,
+      flood: 3,
+      pest: 2
     };
     
-    return tips[currentSeason] || tips['Off-season'];
+    const level = crisisLevels[crisis] || 1;
+    
+    if (level >= 5) return 'CRITICAL';
+    if (level >= 4) return 'HIGH';
+    if (level >= 3) return 'MEDIUM';
+    if (level >= 2) return 'LOW';
+    return 'MINIMAL';
   };
+
+
+
+
 
   return (
     <div className="game-ui-container">
@@ -870,12 +1202,82 @@ const SimpleGameUI: React.FC = () => {
                 {['rice', 'wheat', 'cotton', 'sugarcane'].map(cropType => (
                   <button
                     key={cropType}
-                    className={`retro-button ${selectedCrop === cropType ? 'retro-button-green' : ''}`}
+                    className={`retro-button retro-font ${selectedCrop === cropType ? 'retro-button-green' : ''}`}
                     onClick={() => setSelectedCrop(cropType)}
                   >
                     {getCropEmoji(cropType)} {cropType.toUpperCase()}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Action Sections - Below Crop Selection */}
+            <div className="farm-actions-container">
+              {/* Farm Information Section */}
+              <div className="action-section">
+                <h4 className="retro-font retro-text-cyan section-title">🌾 FARM INFO</h4>
+                <button 
+                  className="retro-button action-button"
+                  onClick={() => {
+                    setShowWeatherModal(true);
+                    if (!aiWeatherData) {
+                      fetchSimpleWeatherPrediction();
+                    }
+                  }}
+                  disabled={weatherLoading}
+                >
+                  {weatherLoading ? '🌍 FETCHING...' : '🌦️ WEATHER'}
+                </button>
+
+                <button 
+                  className="retro-button action-button"
+                  onClick={() => {
+                    setShowMarketModal(true);
+                    if (!marketData || marketData.date !== `Day ${day}`) {
+                      fetchSimpleMarketPrices();
+                    }
+                  }}
+                  disabled={marketLoading}
+                >
+                  {marketLoading ? '💹 CHECKING...' : '🏪 MARKET'}
+                </button>
+              </div>
+
+              {/* Financial Section */}
+              <div className="action-section">
+                <h4 className="retro-font retro-text-amber section-title">💰 FINANCE</h4>
+                <button 
+                  className="retro-button action-button"
+                  onClick={() => setShowLoanModal(true)}
+                >
+                  💳 LOANS
+                </button>
+
+                <button 
+                  className="retro-button action-button"
+                  onClick={() => setShowFinancialModal(true)}
+                >
+                  📊 FINANCES
+                </button>
+              </div>
+
+              {/* Support Section */}
+              <div className="action-section">
+                <h4 className="retro-font retro-text-green section-title">🤝 SUPPORT</h4>
+                <button 
+                  className="retro-button action-button"
+                  onClick={() => setShowSchemesModal(true)}
+                >
+                  📜 SCHEMES
+                </button>
+
+                <button 
+                  className="retro-button action-button"
+                  onClick={handleMeetFarmers}
+                  disabled={npcLoading}
+                >
+                  {npcLoading ? '🤝 CONNECTING...' : '👥 FARMERS'}
+                </button>
               </div>
             </div>
           </div>
@@ -896,7 +1298,15 @@ const SimpleGameUI: React.FC = () => {
                 </div>
                 <div className="financial-row">
                   <span className="retro-font">Debt:</span>
-                  <span className="retro-font retro-text-green">₹0</span>
+                  <span className={`retro-font ${getTotalDebt() > 0 ? 'retro-text-red' : 'retro-text-green'}`}>
+                    ₹{getTotalDebt().toLocaleString()}
+                  </span>
+                </div>
+                <div className="financial-row">
+                  <span className="retro-font">Credit Score:</span>
+                  <span className={`retro-font ${creditScore >= 700 ? 'retro-text-green' : creditScore >= 600 ? 'retro-text-yellow' : 'retro-text-red'}`}>
+                    {creditScore}/850
+                  </span>
                 </div>
                 <div className="financial-row">
                   <span className="retro-font">Inventory Value:</span>
@@ -929,10 +1339,11 @@ const SimpleGameUI: React.FC = () => {
               </button>
 
               <button
-                onClick={handleAddMoney}
-                className="retro-button action-button"
+                onClick={handleSkipMonth}
+                className="retro-button retro-button-blue action-button"
+                title="Skip 30 days - crops will grow, EMIs will be processed"
               >
-                💰 ADD MONEY
+                ⏭️ SKIP MONTH
               </button>
 
               <button
@@ -949,6 +1360,8 @@ const SimpleGameUI: React.FC = () => {
                 📁 EXPORT SAVE
               </button>
 
+
+
               <div className="planting-cost retro-panel-inset" style={{marginTop: '10px', padding: '6px'}}>
                 <div className="financial-row">
                   <span className="retro-font" style={{fontSize: '9px'}}>Planting Cost:</span>
@@ -961,30 +1374,6 @@ const SimpleGameUI: React.FC = () => {
                   </span>
                 </div>
               </div>
-
-              <button 
-                className="retro-button action-button"
-                onClick={() => {
-                  setShowWeatherModal(true);
-                  if (!aiWeatherData) {
-                    fetchRealWeatherWithAI();
-                  }
-                }}
-                disabled={weatherLoading}
-              >
-                {weatherLoading ? '🌍 FETCHING REAL DATA...' : '🌦️ REAL WEATHER + AI'}
-              </button>
-
-              <button 
-                className="retro-button action-button"
-                onClick={() => setShowSchemesModal(true)}
-              >
-                📜 GOVT SCHEMES
-              </button>
-
-              <button className="retro-button action-button">
-                🏪 MARKET PRICES
-              </button>
             </div>
 
             {/* Season Info */}
@@ -1066,7 +1455,7 @@ const SimpleGameUI: React.FC = () => {
         <div className="modal-overlay" onClick={() => setShowWeatherModal(false)}>
           <div className="weather-modal retro-panel" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="retro-font retro-text-green">🌍 REAL WEATHER + 🤖 AI ADVISORY</h2>
+              <h2 className="retro-font retro-text-green">🌦️ AI WEATHER PREDICTION</h2>
               <button 
                 className="close-button retro-button"
                 onClick={() => setShowWeatherModal(false)}
@@ -1078,66 +1467,42 @@ const SimpleGameUI: React.FC = () => {
             <div className="weather-content">
               <div className="season-info-header retro-panel-inset">
                 <h3 className="retro-font retro-text-amber">
-                  {aiWeatherData?.isAI === false ? '📊 SIMULATED DATA' : '🌍 REAL WEATHER + 🤖 AI'} - {season} Season
+                  {aiWeatherData?.isAI === false ? '📊 FALLBACK DATA' : '🤖 AI POWERED'} - {season} Season, Day {day}
                 </h3>
                 {aiWeatherData?.source && (
-                  <p className="retro-font data-source">Source: {aiWeatherData.source}</p>
+                  <div className="source-info">
+                    <p className="retro-font data-source">Source: {aiWeatherData.source}</p>
+                    {aiWeatherData?.isAI !== false && (
+                      <div className="ai-badge retro-font">
+                        <span className="ai-indicator">✨ AI POWERED ANALYTICS</span>
+                      </div>
+                    )}
+                  </div>
                 )}
                 {weatherLoading && (
                   <div className="ai-loading retro-font">
-                    <span className="loading-spinner">🌍</span> Fetching real weather data + generating AI advisory...
+                    <span className="loading-spinner">🌦️</span> Analyzing weather patterns...
                   </div>
                 )}
               </div>
 
               {aiWeatherData && (
-                <div className="ai-summary retro-panel-inset">
-                  <p className="retro-font ai-summary-text">{aiWeatherData.summary}</p>
+                <div className="simple-weather-display retro-panel-inset">
+                  <h3 className="retro-font retro-text-amber">🌦️ 3-Day Forecast</h3>
+                  <div className="forecast-text retro-font">
+                    {aiWeatherData.forecast}
+                  </div>
                 </div>
               )}
 
-              <div className="forecast-grid">
-                {(aiWeatherData?.forecast || generateWeatherForecast()).map((forecast: any, index: number) => (
-                  <div key={index} className="forecast-day retro-panel-inset">
-                    <div className="day-header">
-                      <span className="retro-font day-name">{forecast.day}</span>
-                      <span className="weather-icon">{forecast.icon}</span>
-                    </div>
-                    <div className="weather-details">
-                      <div className="condition retro-font">{forecast.condition?.replace('_', ' ') || forecast.condition}</div>
-                      <div className="temperature retro-font retro-text-amber">
-                        {forecast.temperature?.min || forecast.tempMin}°C - {forecast.temperature?.max || forecast.tempMax}°C
-                      </div>
-                      {forecast.rainfall > 0 && (
-                        <div className="rainfall retro-font retro-text-cyan">
-                          🌧️ {forecast.rainfall}mm
-                        </div>
-                      )}
-                      <div className="humidity retro-font">
-                        💧 {forecast.humidity}% humidity
-                      </div>
-                      {forecast.advisory && (
-                        <div className="advisory retro-font retro-text-green">
-                          💡 {forecast.advisory}
-                        </div>
-                      )}
-                    </div>
+              {aiWeatherData && (
+                <div className="farming-tip retro-panel-inset">
+                  <h3 className="retro-font retro-text-green">🌾 Farming Tip for {selectedCrop.toUpperCase()}</h3>
+                  <div className="tip-text retro-font">
+                    {aiWeatherData.farmingTip}
                   </div>
-                ))}
-              </div>
-
-              <div className="farming-advisory retro-panel">
-                <h3 className="retro-font retro-text-amber">
-                  🌾 {aiWeatherData?.isAI === false ? 'FARMING ADVISORY' : 'AI FARMING ADVISORY'}
-                </h3>
-                <div className="advisory-content retro-panel-inset">
-                  {(aiWeatherData?.farming_tips || getFarmingAdvisory()).map((advice: string, index: number) => (
-                    <div key={index} className="advisory-item retro-font">
-                      {advice}
-                    </div>
-                  ))}
                 </div>
-              </div>
+              )}
 
               <div className="monsoon-info retro-panel">
                 <h3 className="retro-font retro-text-amber">🌧️ MONSOON INSIGHTS</h3>
@@ -1250,6 +1615,631 @@ const SimpleGameUI: React.FC = () => {
                     <p>🌾 Schemes help improve farmer income and reduce agricultural risks</p>
                     <p>💡 Visit your nearest Common Service Center (CSC) for assistance</p>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Market Prices Modal */}
+      {showMarketModal && (
+        <div className="modal-overlay" onClick={() => setShowMarketModal(false)}>
+          <div className="market-modal retro-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="retro-font retro-text-green">💹 MARKET PRICES - {marketData?.date || `Day ${day}`}</h2>
+              <span className={`ai-badge retro-font ${(marketData as any)?.isAI !== false ? 'retro-text-amber' : 'retro-text-red'}`}>
+                {(marketData as any)?.isAI !== false ? '🤖 AI-Powered' : '📊 Simulation Mode'}
+              </span>
+              <button 
+                className="close-button retro-button"
+                onClick={() => setShowMarketModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            
+            {marketLoading ? (
+              <div className="loading-section retro-panel-inset">
+                <div className="retro-font retro-text-cyan">🤖 Analyzing market trends...</div>
+              </div>
+            ) : marketData ? (
+              <>
+                {/* Simple Market Info */}
+                <div className="market-summary retro-panel-inset">
+                  <div className="retro-font retro-text-amber" style={{fontSize: '10px', marginBottom: '8px'}}>
+                    📊 Current Market Prices - {marketData.season} Season
+                  </div>
+                  <div className="retro-font" style={{fontSize: '9px'}}>
+                    Source: {marketData.source}
+                  </div>
+                </div>
+
+                {/* Price Table */}
+                <div className="price-table retro-panel-inset">
+                  <table className="retro-font" style={{width: '100%', fontSize: '9px'}}>
+                    <thead>
+                      <tr style={{borderBottom: '1px solid #4af626'}}>
+                        <th style={{padding: '8px', textAlign: 'left'}}>Crop</th>
+                        <th style={{padding: '8px', textAlign: 'right'}}>Market Price</th>
+                        <th style={{padding: '8px', textAlign: 'right'}}>MSP Floor</th>
+                        <th style={{padding: '8px', textAlign: 'center'}}>Trend</th>
+                        <th style={{padding: '8px', textAlign: 'right'}}>Your Stock</th>
+                        <th style={{padding: '8px', textAlign: 'center'}}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(marketData.prices).map(([crop, data]: [string, any]) => {
+                        const playerStock = harvestedCrops.find(item => item.type === crop);
+                        const quantity = playerStock?.quantity || 0;
+                        const priceValue = typeof data === 'number' ? data : data.market_price || data;
+                        const totalValue = Math.floor((quantity * priceValue) / 100); // Convert kg to quintal pricing
+                        
+                        return (
+                          <tr key={crop} style={{borderBottom: '1px solid #333'}}>
+                            <td style={{padding: '6px'}}>
+                              {getCropEmoji(crop)} {crop.toUpperCase()}
+                            </td>
+                            <td style={{padding: '6px', textAlign: 'right'}} className="retro-text-green">
+                              ₹{priceValue.toLocaleString('en-IN')}
+                              <div style={{fontSize: '7px', color: '#888'}}>/quintal</div>
+                            </td>
+                            <td style={{padding: '6px', textAlign: 'right'}} className="retro-text-amber">
+                              MSP
+                            </td>
+                            <td style={{padding: '6px', textAlign: 'center'}}>
+                              🤖 AI
+                            </td>
+                            <td style={{padding: '6px', textAlign: 'right'}}>
+                              {quantity > 0 ? (
+                                <>
+                                  <div>{quantity}kg</div>
+                                  <div className="retro-text-cyan" style={{fontSize: '7px'}}>
+                                    ≈ ₹{totalValue.toLocaleString('en-IN')}
+                                  </div>
+                                </>
+                              ) : (
+                                <span style={{color: '#666'}}>No stock</span>
+                              )}
+                            </td>
+                            <td style={{padding: '6px', textAlign: 'center'}}>
+                              {quantity > 0 ? (
+                                <button
+                                  className="retro-button"
+                                  style={{fontSize: '8px', padding: '4px 8px'}}
+                                  onClick={() => {
+                                    handleSellCrop(crop, quantity);
+                                    setShowMarketModal(false);
+                                  }}
+                                >
+                                  💰 SELL
+                                </button>
+                              ) : (
+                                <span style={{color: '#666', fontSize: '8px'}}>-</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Price Explanations */}
+                <div className="price-reasons retro-panel-inset">
+                  <h3 className="retro-font retro-text-amber" style={{fontSize: '10px', marginBottom: '8px'}}>
+                    📊 Market Analysis
+                  </h3>
+                  {Object.entries(marketData.prices).map(([crop, price]: [string, any]) => {
+                    const priceValue = typeof price === 'number' ? price : price.market_price || price;
+                    const playerStock = harvestedCrops.find(item => item.type === crop);
+                    const hasStock = playerStock && playerStock.quantity > 0;
+                    const isSeasonalCrop = (season === 'Kharif' && (crop === 'rice' || crop === 'cotton')) ||
+                                          (season === 'Rabi' && crop === 'wheat');
+                    
+                    const contextualAdvice = hasStock ? 
+                      (isSeasonalCrop ? `Good time to sell - ${season} season demand high` : 'Consider holding for better prices') :
+                      (isSeasonalCrop ? `Plant ${crop} - favorable season` : 'Off-season crop');
+                    
+                    return (
+                      <div key={crop} className="reason-card" style={{marginBottom: '6px'}}>
+                        <span className="retro-font retro-text-green" style={{fontSize: '9px'}}>
+                          {crop.toUpperCase()}:
+                        </span>
+                        <span className="retro-font" style={{fontSize: '8px', marginLeft: '8px'}}>
+                          ₹{priceValue.toLocaleString('en-IN')}/quintal - {contextualAdvice}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Educational Info */}
+                <div className="educational-info retro-panel-inset">
+                  <h4 className="retro-font retro-text-amber" style={{fontSize: '10px', marginBottom: '6px'}}>
+                    💡 What is MSP?
+                  </h4>
+                  <p className="retro-font" style={{fontSize: '8px', lineHeight: '1.4'}}>
+                    Minimum Support Price (MSP) is the minimum price at which the 
+                    government buys crops from farmers. Market prices can go above 
+                    MSP, but the government ensures you never sell below MSP.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="retro-panel-inset">
+                <div className="retro-font">No market data available</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* NPC (Farmer Stories) Modal */}
+      {showNPCModal && currentNPC && (
+        <div className="modal-overlay" onClick={() => setShowNPCModal(false)}>
+          <div className="npc-modal retro-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="retro-font retro-text-green">👥 FARMER STORIES</h2>
+              <button 
+                className="close-button retro-button"
+                onClick={() => setShowNPCModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="npc-content">
+              {/* Farmer Profile Header */}
+              <div className="npc-profile retro-panel-inset">
+                <div className="npc-header-info">
+                  <h3 className="retro-font retro-text-amber npc-name">{currentNPC.name}</h3>
+                  <div className="npc-basic-info">
+                    <span className="retro-font npc-age">Age: {currentNPC.age}</span>
+                    <span className="retro-font npc-location">📍 {currentNPC.location}</span>
+                  </div>
+                </div>
+                
+                {/* Crisis Level Indicator */}
+                <div className="crisis-indicator">
+                  <div className="crisis-header">
+                    <span className="retro-font crisis-label">Crisis Level:</span>
+                    <span 
+                      className="retro-font crisis-level"
+                      style={{ color: getCrisisColor(currentNPC.currentCrisis) }}
+                    >
+                      {getCrisisLevelText(currentNPC.currentCrisis)}
+                    </span>
+                  </div>
+                  <div className="crisis-type retro-font">
+                    {currentNPC.currentCrisis.toUpperCase()} CRISIS
+                  </div>
+                </div>
+              </div>
+
+              {/* Farm Details */}
+              <div className="npc-farm-details retro-panel-inset">
+                <h4 className="retro-font retro-text-amber">🚜 FARM DETAILS</h4>
+                <div className="farm-info-grid">
+                  <div className="farm-info-item">
+                    <span className="retro-font info-label">Farm Size:</span>
+                    <span className="retro-font info-value">{currentNPC.farmSize}</span>
+                  </div>
+                  <div className="farm-info-item">
+                    <span className="retro-font info-label">Family:</span>
+                    <span className="retro-font info-value">{currentNPC.familySize} members</span>
+                  </div>
+                  <div className="farm-info-item">
+                    <span className="retro-font info-label">Main Crops:</span>
+                    <span className="retro-font info-value">
+                      {currentNPC.primaryCrops?.join(', ') || 'Mixed farming'}
+                    </span>
+                  </div>
+                  <div className="farm-info-item">
+                    <span className="retro-font info-label">Education:</span>
+                    <span className="retro-font info-value">{currentNPC.educationLevel}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Farmer's Story */}
+              <div className="npc-story retro-panel-inset">
+                <h4 className="retro-font retro-text-amber">📖 FARMER'S STORY</h4>
+                <div className="story-content">
+                  <p className="retro-font story-backstory">{currentNPC.backstory}</p>
+                  
+                  {currentNPC.crisisDetails && (
+                    <div className="crisis-details">
+                      <h5 className="retro-font crisis-details-title retro-text-red">
+                        Current Crisis:
+                      </h5>
+                      <p className="retro-font crisis-details-text">{currentNPC.crisisDetails}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Relationship & Dialogue */}
+              <div className="npc-dialogue retro-panel-inset">
+                <h4 className="retro-font retro-text-amber">💬 CONVERSATION</h4>
+                <div className="relationship-status">
+                  <span className="retro-font relationship-label">Relationship:</span>
+                  <span 
+                    className={`retro-font relationship-value ${
+                      currentNPC.relationshipLevel > 5 ? 'retro-text-green' : 
+                      currentNPC.relationshipLevel < -5 ? 'retro-text-red' : 
+                      'retro-text-amber'
+                    }`}
+                  >
+                    {currentNPC.relationshipLevel > 5 ? 'Friendly' : 
+                     currentNPC.relationshipLevel < -5 ? 'Distant' : 'Neutral'}
+                    ({currentNPC.relationshipLevel > 0 ? '+' : ''}{currentNPC.relationshipLevel})
+                  </span>
+                </div>
+                
+                <div className="dialogue-content">
+                  <div className="npc-dialogue-text retro-font">
+                    {currentNPC.currentCrisis === 'debt' && 
+                      `"The moneylenders are demanding payment, but how can I pay when the crops failed? My family depends on this farm, but the debt keeps growing every month..."`
+                    }
+                    {currentNPC.currentCrisis === 'drought' && 
+                      `"The wells have dried up and there's no rain in sight. I watch my crops wither every day, knowing my family's future is dying with them..."`
+                    }
+                    {currentNPC.currentCrisis === 'flood' && 
+                      `"The floods came so suddenly. Everything we worked for this season is underwater. How do we start over when we have nothing left?"`
+                    }
+                    {currentNPC.currentCrisis === 'pest' && 
+                      `"The pests destroyed half my crop before I could stop them. I spent everything on pesticides, but it wasn't enough. What will I tell my children?"`
+                    }
+                    {currentNPC.currentCrisis === 'health' && 
+                      `"I can barely work the fields anymore, but who else will do it? The medical bills are piling up, and the farm is all we have..."`
+                    }
+                    {currentNPC.currentCrisis === 'equipment' && 
+                      `"My tractor broke down during planting season. Without it, I can't prepare the fields properly. The repair costs more than I earn in a year..."`
+                    }
+                  </div>
+                </div>
+              </div>
+
+              {/* Educational Content */}
+              <div className="npc-education retro-panel-inset">
+                <h4 className="retro-font retro-text-amber">💡 LEARNING OPPORTUNITY</h4>
+                <div className="education-content">
+                  <p className="retro-font education-text">
+                    This farmer's situation highlights the challenges of {currentNPC.currentCrisis} crisis in Indian agriculture. 
+                    Understanding these real-world problems helps us appreciate the complexity of farming decisions.
+                  </p>
+                  
+                  <div className="education-tip">
+                    <span className="retro-font tip-label">💡 Did you know:</span>
+                    <span className="retro-font tip-text">
+                      {currentNPC.currentCrisis === 'debt' && 
+                        'Government schemes like PM-KISAN provide ₹6,000 annual support to small farmers, and Kisan Credit Cards offer loans at just 7% interest.'
+                      }
+                      {currentNPC.currentCrisis === 'drought' && 
+                        'Drip irrigation can reduce water usage by 30-50% while maintaining crop yields, making farms more drought-resistant.'
+                      }
+                      {currentNPC.currentCrisis === 'flood' && 
+                        'Crop insurance under PM Fasal Bima Yojana covers up to ₹2 lakh per hectare for flood damage at subsidized premiums.'
+                      }
+                      {currentNPC.currentCrisis === 'pest' && 
+                        'Integrated Pest Management (IPM) can reduce pesticide costs by 25% while improving crop health through natural predators.'
+                      }
+                      {currentNPC.currentCrisis === 'health' && 
+                        'Ayushman Bharat provides free healthcare up to ₹5 lakh per family for rural farmers, covering most medical emergencies.'
+                      }
+                      {currentNPC.currentCrisis === 'equipment' && 
+                        'Custom Hiring Centers provide tractor services at ₹800-1200 per acre, eliminating the need for expensive equipment purchases.'
+                      }
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="npc-actions">
+                <button
+                  className="retro-button retro-button-green npc-action-button"
+                  onClick={handleMeetFarmers}
+                  disabled={npcLoading}
+                >
+                  {npcLoading ? '🤝 CONNECTING...' : '👥 MEET ANOTHER FARMER'}
+                </button>
+                
+                <button
+                  className="retro-button npc-action-button"
+                  onClick={() => setShowNPCModal(false)}
+                >
+                  📚 CONTINUE FARMING
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loan Modal */}
+      {showLoanModal && (
+        <div className="modal-overlay" onClick={() => setShowLoanModal(false)}>
+          <div className="loan-modal retro-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="retro-font retro-text-green">💳 AGRICULTURAL LOANS</h2>
+              <button 
+                className="modal-close retro-button"
+                onClick={() => setShowLoanModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="loan-content">
+              <div className="credit-info retro-panel-inset">
+                <h3 className="retro-font retro-text-amber">📊 YOUR CREDIT PROFILE</h3>
+                <div className="credit-row">
+                  <span className="retro-font">Credit Score:</span>
+                  <span className={`retro-font ${creditScore >= 700 ? 'retro-text-green' : creditScore >= 600 ? 'retro-text-yellow' : 'retro-text-red'}`}>
+                    {creditScore}/850
+                  </span>
+                </div>
+                <div className="credit-row">
+                  <span className="retro-font">Current Debt:</span>
+                  <span className={`retro-font ${getTotalDebt() > 0 ? 'retro-text-red' : 'retro-text-green'}`}>
+                    ₹{getTotalDebt().toLocaleString()}
+                  </span>
+                </div>
+                <div className="credit-row">
+                  <span className="retro-font">Active Loans:</span>
+                  <span className="retro-font retro-text-cyan">
+                    {loans.filter(loan => loan.status === 'active').length}
+                  </span>
+                </div>
+              </div>
+
+              <div className="loan-options">
+                <h3 className="retro-font retro-text-amber">💰 AVAILABLE LOAN OPTIONS</h3>
+                
+                {Object.entries(loanTypes).map(([type, config]) => (
+                  <div key={type} className="loan-option retro-panel-inset">
+                    <div className="loan-header">
+                      <h4 className="retro-font retro-text-green">{config.name}</h4>
+                      <span className="retro-font loan-rate">{config.interestRate}% Annual</span>
+                    </div>
+                    <p className="retro-font loan-description">{config.description}</p>
+                    <div className="loan-details">
+                      <div className="loan-detail">
+                        <span className="retro-font">Max Amount:</span>
+                        <span className="retro-font retro-text-cyan">₹{config.maxAmount.toLocaleString()}</span>
+                      </div>
+                      <div className="loan-detail">
+                        <span className="retro-font">Processing:</span>
+                        <span className="retro-font retro-text-yellow">{config.processingTime}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="loan-apply">
+                      <input
+                        type="number"
+                        placeholder="Enter amount (₹10,000 - ₹3,00,000)"
+                        className="retro-input loan-amount-input"
+                        min="10000"
+                        max={config.maxAmount}
+                        step="1000"
+                        id={`loan-amount-${type}`}
+                      />
+                      <button
+                        className="retro-button retro-button-green loan-apply-button"
+                        onClick={() => {
+                          const input = document.getElementById(`loan-amount-${type}`) as HTMLInputElement;
+                          const amount = parseInt(input.value);
+                          if (amount) {
+                            applyForLoan(type as keyof typeof loanTypes, amount);
+                          }
+                        }}
+                        disabled={type === 'bank' && creditScore < 650}
+                      >
+                        {type === 'bank' && creditScore < 650 ? '❌ CREDIT TOO LOW' : '✅ APPLY NOW'}
+                      </button>
+                    </div>
+                    
+                    {type === 'bank' && creditScore < 650 && (
+                      <p className="retro-font loan-warning retro-text-red">
+                        ⚠️ Bank loans require credit score ≥650. Current: {creditScore}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {loans.length > 0 && (
+                <div className="active-loans">
+                  <h3 className="retro-font retro-text-amber">📋 YOUR ACTIVE LOANS</h3>
+                  {loans.filter(loan => loan.status === 'active').map(loan => (
+                    <div key={loan.id} className="active-loan retro-panel-inset">
+                      <div className="loan-summary">
+                        <span className="retro-font loan-type">{loanTypes[loan.type].name}</span>
+                        <span className="retro-font loan-amount">₹{loan.remainingAmount.toLocaleString()}</span>
+                      </div>
+                      <div className="loan-emi">
+                        <span className="retro-font">Monthly EMI: ₹{loan.monthlyEMI.toLocaleString()}</span>
+                        <span className="retro-font">Next Due: Day {loan.nextEMIDay}</span>
+                      </div>
+                      {loan.missedPayments > 0 && (
+                        <div className="loan-warning retro-text-red retro-font">
+                          ⚠️ Missed Payments: {loan.missedPayments}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="loan-education retro-panel-inset">
+                <h4 className="retro-font retro-text-amber">💡 LOAN EDUCATION</h4>
+                <p className="retro-font education-text">
+                  • <strong>Bank KCC:</strong> Lowest interest but requires good credit score and collateral<br/>
+                  • <strong>Moneylender:</strong> Quick approval but very high interest - use only for emergencies<br/>
+                  • <strong>Government:</strong> Subsidized rates but may require documentation<br/>
+                  • <strong>EMI:</strong> Paid automatically every 30 days. Missing payments hurts credit score<br/>
+                  • <strong>Credit Score:</strong> Improves with on-time payments, drops with missed payments
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Financial Dashboard Modal */}
+      {showFinancialModal && (
+        <div className="modal-overlay" onClick={() => setShowFinancialModal(false)}>
+          <div className="financial-modal retro-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="retro-font retro-text-green">📊 FINANCIAL DASHBOARD</h2>
+              <button 
+                className="modal-close retro-button"
+                onClick={() => setShowFinancialModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="financial-content">
+              {/* Current Status */}
+              <div className="financial-overview retro-panel-inset">
+                <h3 className="retro-font retro-text-amber">💰 CURRENT STATUS</h3>
+                <div className="status-grid">
+                  <div className="status-item">
+                    <span className="retro-font status-label">Cash:</span>
+                    <span className="retro-font retro-text-green">₹{money.toLocaleString()}</span>
+                  </div>
+                  <div className="status-item">
+                    <span className="retro-font status-label">Debt:</span>
+                    <span className={`retro-font ${getTotalDebt() > 0 ? 'retro-text-red' : 'retro-text-green'}`}>
+                      ₹{getTotalDebt().toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="status-item">
+                    <span className="retro-font status-label">Net Worth:</span>
+                    <span className={`retro-font ${(money - getTotalDebt()) >= 0 ? 'retro-text-green' : 'retro-text-red'}`}>
+                      ₹{(money - getTotalDebt()).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="status-item">
+                    <span className="retro-font status-label">Credit Score:</span>
+                    <span className={`retro-font ${creditScore >= 700 ? 'retro-text-green' : creditScore >= 600 ? 'retro-text-yellow' : 'retro-text-red'}`}>
+                      {creditScore}/850
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 30-Day Summary */}
+              {(() => {
+                const summary = getFinancialSummary();
+                return (
+                  <div className="financial-summary retro-panel-inset">
+                    <h3 className="retro-font retro-text-amber">📈 LAST 30 DAYS</h3>
+                    <div className="summary-grid">
+                      <div className="summary-item income">
+                        <span className="retro-font summary-label">Income:</span>
+                        <span className="retro-font retro-text-green">₹{summary.income.toLocaleString()}</span>
+                      </div>
+                      <div className="summary-item expense">
+                        <span className="retro-font summary-label">Expenses:</span>
+                        <span className="retro-font retro-text-red">₹{summary.expenses.toLocaleString()}</span>
+                      </div>
+                      <div className="summary-item profit">
+                        <span className="retro-font summary-label">Profit:</span>
+                        <span className={`retro-font ${summary.profit >= 0 ? 'retro-text-green' : 'retro-text-red'}`}>
+                          ₹{summary.profit.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Visual Chart */}
+              {(() => {
+                const summary = getFinancialSummary();
+                const maxAmount = Math.max(summary.income, summary.expenses, 1000);
+                const incomeHeight = Math.max((summary.income / maxAmount) * 150, 5);
+                const expenseHeight = Math.max((summary.expenses / maxAmount) * 150, 5);
+                
+                return (
+                  <div className="visual-chart">
+                    <h3 className="retro-font retro-text-amber">📊 INCOME vs EXPENSES (30 Days)</h3>
+                    <div className="chart-canvas">
+                      <div className="chart-bars">
+                        <div className="chart-bar">
+                          <div 
+                            className="bar-visual income" 
+                            style={{ height: `${incomeHeight}px` }}
+                          ></div>
+                          <div className="retro-font bar-label">INCOME</div>
+                          <div className="retro-font bar-value">₹{summary.income.toLocaleString()}</div>
+                        </div>
+                        <div className="chart-bar">
+                          <div 
+                            className="bar-visual expense" 
+                            style={{ height: `${expenseHeight}px` }}
+                          ></div>
+                          <div className="retro-font bar-label">EXPENSES</div>
+                          <div className="retro-font bar-value">₹{summary.expenses.toLocaleString()}</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="chart-legend">
+                      <div className="legend-item">
+                        <div className="legend-color income"></div>
+                        <span className="retro-font legend-text">Income</span>
+                      </div>
+                      <div className="legend-item">
+                        <div className="legend-color expense"></div>
+                        <span className="retro-font legend-text">Expenses</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Recent Transactions */}
+              {(() => {
+                const recentTransactions = transactions.slice(-10).reverse();
+                return (
+                  <div className="recent-transactions retro-panel-inset">
+                    <h3 className="retro-font retro-text-amber">📋 RECENT TRANSACTIONS</h3>
+                    <div className="transactions-list">
+                      {recentTransactions.length === 0 ? (
+                        <p className="retro-font no-transactions">No transactions yet</p>
+                      ) : (
+                        recentTransactions.map(txn => (
+                          <div key={txn.id} className="transaction-item">
+                            <div className="transaction-main">
+                              <span className="retro-font transaction-day">Day {txn.day}</span>
+                              <span className="retro-font transaction-desc">{txn.description}</span>
+                              <span className={`retro-font transaction-amount ${txn.type === 'income' ? 'retro-text-green' : 'retro-text-red'}`}>
+                                {txn.type === 'income' ? '+' : '-'}₹{txn.amount.toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Financial Tips */}
+              <div className="financial-tips retro-panel-inset">
+                <h4 className="retro-font retro-text-amber">💡 FINANCIAL TIPS</h4>
+                <div className="tips-content">
+                  <p className="retro-font tip-text">
+                    • <strong>Maintain Emergency Fund:</strong> Keep 3-6 months of expenses as cash<br/>
+                    • <strong>Credit Score:</strong> Pay EMIs on time to improve creditworthiness<br/>
+                    • <strong>Diversify Income:</strong> Plant different crops to reduce risk<br/>
+                    • <strong>Government Schemes:</strong> Use PM-KISAN and insurance schemes<br/>
+                    • <strong>Market Timing:</strong> Sell crops when prices are above MSP
+                  </p>
                 </div>
               </div>
             </div>

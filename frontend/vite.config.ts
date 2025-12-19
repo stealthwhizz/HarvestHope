@@ -5,32 +5,27 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    // Optimize build for performance
+    // Optimize build for production
     target: 'es2020',
     minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
     rollupOptions: {
       output: {
         // Code splitting for better caching
         manualChunks: {
-          vendor: ['react', 'react-dom', '@reduxjs/toolkit', 'react-redux'],
-          pixi: ['pixi.js'],
-          audio: ['howler'],
+          vendor: ['react', 'react-dom'],
+          ai: ['@google/generative-ai'],
         },
       },
     },
     // Asset optimization
     assetsInlineLimit: 4096, // Inline small assets
     chunkSizeWarningLimit: 1000,
+    // Source maps for debugging (disable in production if needed)
+    sourcemap: false,
   },
   optimizeDeps: {
     // Pre-bundle dependencies for faster dev server
-    include: ['react', 'react-dom', 'pixi.js', 'howler', '@reduxjs/toolkit'],
+    include: ['react', 'react-dom', '@google/generative-ai'],
   },
   server: {
     // Development server optimizations
