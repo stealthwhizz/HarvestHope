@@ -1,10 +1,11 @@
 # 🌾 Harvest Hope: The Last Farm
 
+![Harvest Hope - Building Agricultural Education with Kiro AI](cover.png)
+
 **An AI-powered farming simulation game showcasing the challenges and resilience of Indian agriculture**
 
-[![Live Demo](https://img.shields.io/badge/🎮_Play_Now-Live_Demo-4af626?style=for-the-badge)](http://localhost:5174)
-[![Documentation](https://img.shields.io/badge/📚_Docs-Complete_Guide-ffaa00?style=for-the-badge)](docs/)
-[![AI Powered](https://img.shields.io/badge/🤖_AI-Google_Gemini-ff4444?style=for-the-badge)](docs/API_SETUP.md)
+[![Live Demo](https://img.shields.io/badge/🎮_Play_Now-Live_Demo-4af626?style=for-the-badge)](https://stealthwhizz.github.io/HarvestHope/)
+
 
 ## 🎯 Project Overview
 
@@ -42,7 +43,7 @@ This project demonstrates advanced AI integration, modern web development practi
 ### Installation
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/harvest-hope.git
+git clone https://github.com/stealthwhizz/harvest-hope.git
 cd harvest-hope
 
 # Install dependencies
@@ -260,7 +261,7 @@ We welcome contributions from developers of all skill levels!
 ```bash
 # 1. Fork the repository on GitHub
 # 2. Clone your fork locally
-git clone https://github.com/your-username/harvest-hope.git
+git clone https://github.com/stealthwhizz/harvest-hope.git
 cd harvest-hope
 
 # 3. Create a feature branch
@@ -350,13 +351,13 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 ## 📞 Support & Contact
 
 ### 🆘 Getting Help
-- **🐛 Bug Reports**: [GitHub Issues](https://github.com/your-username/harvest-hope/issues)
-- **💬 Discussions**: [GitHub Discussions](https://github.com/your-username/harvest-hope/discussions)
+- **🐛 Bug Reports**: [GitHub Issues](https://github.com/stealthwhizz/harvest-hope/issues)
+- **💬 Discussions**: [GitHub Discussions](https://github.com/stealthwhizz/harvest-hope/discussions)
 - **📚 Documentation**: [Complete docs folder](docs/)
-- **📧 Direct Contact**: your-email@example.com
+- **📧 Direct Contact**: stealthwhiz@gmail.com
 
 ### 🔗 Useful Links
-- **🎮 Live Demo**: http://localhost:5174 (after setup)
+- **🎮 Live Demo**: https://stealthwhizz.github.io/HarvestHope/ 
 - **📖 Documentation**: [docs/](docs/) folder
 - **🤖 AI Setup Guide**: [docs/API_SETUP.md](docs/API_SETUP.md)
 - **🛠️ Development Guide**: [docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md)
@@ -369,6 +370,6 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 *Experience the challenges and triumphs of Indian agriculture while learning about real farming practices, financial management, and government support systems.*
 
-[![Made with ❤️ for Kiro Challenge](https://img.shields.io/badge/Made_with_❤️_for-Kiro_Challenge-ff69b4?style=for-the-badge)](https://kiro.ai)
+[![Made with ❤️ for Kiro Challenge](https://img.shields.io/badge/Made_with_❤️_for-Kiro-ff69b4?style=for-the-badge)](https://kiro.ai)
 
 </div>

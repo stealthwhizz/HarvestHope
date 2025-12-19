@@ -11,7 +11,7 @@
 ### **Initial Setup**
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/harvest-hope.git
+git clone https://github.com/stealthwhizz/harvest-hope.git
 cd harvest-hope
 
 # Install frontend dependencies

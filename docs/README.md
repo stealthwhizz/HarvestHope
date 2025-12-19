@@ -111,7 +111,7 @@ AI troubleshooting and improvements:
 ## 🔗 External Resources
 
 ### 🌐 Related Links
-- **🏠 Main Repository**: [GitHub Repository](https://github.com/your-username/harvest-hope)
+- **🏠 Main Repository**: [GitHub Repository](https://github.com/stealthwhizz/harvest-hope)
 - **🎮 Live Demo**: http://localhost:5174 (after setup)
 - **🤖 Google Gemini AI**: https://aistudio.google.com/app/apikey
 - **⚛️ React Documentation**: https://react.dev/
@@ -127,8 +127,8 @@ AI troubleshooting and improvements:
 ## 📞 Documentation Support
 
 ### 🆘 Getting Help with Docs
-- **🐛 Report Issues**: [GitHub Issues](https://github.com/your-username/harvest-hope/issues)
-- **💡 Suggest Improvements**: [GitHub Discussions](https://github.com/your-username/harvest-hope/discussions)
+- **🐛 Report Issues**: [GitHub Issues](https://github.com/stealthwhizz/harvest-hope/issues)
+- **💡 Suggest Improvements**: [GitHub Discussions](https://github.com/stealthwhizz/harvest-hope/discussions)
 - **📧 Direct Contact**: your-email@example.com
 - **💬 Community**: Join our developer community
 
