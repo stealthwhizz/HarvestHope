@@ -1,0 +1,87 @@
+name: Deploy to AWS S3 + CloudFront
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  S3_BUCKET: harvest-hope-game
+  CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+        
+    - name: Install dependencies
+      run: |
+        cd frontend
+        npm ci
+        
+    - name: Build application
+      run: |
+        cd frontend
+        npm run build
+      env:
+        VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+        VITE_NODE_ENV: production
+        VITE_ENABLE_DEBUG_LOGGING: false
+        VITE_API_BASE_URL: https://api.harvesthope.app
+        VITE_BUILD_VERSION: ${{ github.sha }}
+        VITE_BUILD_DATE: ${{ github.event.head_commit.timestamp }}
+        
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+        
+    - name: Deploy static assets to S3
+      run: |
+        # Deploy static assets with long cache (1 year)
+        aws s3 sync frontend/dist/ s3://${{ env.S3_BUCKET }} \
+          --delete \
+          --cache-control "public, max-age=31536000, immutable" \
+          --exclude "*.html" \
+          --exclude "*.json" \
+          --exclude "*.txt" \
+          --exclude "*.xml"
+          
+    - name: Deploy HTML and config files to S3
+      run: |
+        # Deploy HTML and config files with short cache (5 minutes)
+        aws s3 sync frontend/dist/ s3://${{ env.S3_BUCKET }} \
+          --cache-control "public, max-age=300, must-revalidate" \
+          --include "*.html" \
+          --include "*.json" \
+          --include "*.txt" \
+          --include "*.xml"
+          
+    - name: Invalidate CloudFront cache
+      run: |
+        aws cloudfront create-invalidation \
+          --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
+          --paths "/*"
+          
+    - name: Get deployment URL
+      run: |
+        DISTRIBUTION_DOMAIN=$(aws cloudfront get-distribution \
+          --id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
+          --query 'Distribution.DomainName' \
+          --output text)
+        echo "🚀 Deployment successful!"
+        echo "📱 Site URL: https://$DISTRIBUTION_DOMAIN"
+        echo "🔗 S3 Bucket: s3://${{ env.S3_BUCKET }}"
